@@ -1,7 +1,7 @@
 // ── goCreateForm ──────────────────────────────────────────────────────────────
 async function goCreateForm() {
     window.editingFormId = null;
-    work_area.className = "glass-bg flex-1 !overflow-y-auto p-12 m-8";
+    work_area.className = "glass-bg flex-1 !overflow-y-auto p-3 md:p-8 lg:p-12 m-1 md:m-4 lg:m-8";
     work_area.innerHTML = `<h2 class="text-3xl font-bold text-white mb-6">Loading Templates...</h2>`;
 
     try {
@@ -13,23 +13,38 @@ async function goCreateForm() {
                 <h2 class="text-4xl font-bold text-white mb-4">Start a New Form</h2>
                 <p class="text-gray-400">Choose a pre-made template below or start from scratch.</p>
             </div>
-            <div class="grid grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
                 <!-- Blank Form Card -->
-                <div onclick="initFormBuilder()" class="p-8 rounded-3xl bg-white/5 border-2 border-dashed border-white/20 hover:border-emerald-400/50 hover:bg-white/10 cursor-pointer transition text-center flex flex-col items-center justify-center min-h-[220px] group">
+                <div onclick="(async()=>await initFormBuilder())()" class="p-8 rounded-3xl bg-white/5 border-2 border-dashed border-white/20 hover:border-emerald-400/50 hover:bg-white/10 cursor-pointer transition text-center flex flex-col items-center justify-center min-h-[220px] group">
                     <div class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-emerald-500/30 transition">
                         <i class="fa-solid fa-plus"></i>
                     </div>
                     <h3 class="text-xl font-bold text-white">Blank Form</h3>
                 </div>
+
+                <!-- AI Generate Card -->
+                <div onclick="showAIGeneratePanel()"
+                    class="p-8 rounded-3xl bg-gradient-to-br from-violet-500/10 to-purple-500/5
+                           border border-violet-500/30 hover:border-violet-400/60 cursor-pointer
+                           transition text-center flex flex-col items-center justify-center
+                           min-h-[220px] group relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
+                    <div class="w-14 h-14 rounded-full bg-violet-500/20 text-violet-400 flex items-center
+                                justify-center text-2xl mb-4 group-hover:scale-110 transition relative z-10">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white relative z-10">Generate with AI</h3>
+                    <p class="text-gray-400 text-xs mt-2 relative z-10">Describe your form, AI builds it</p>
+                </div>
         `;
         
         templates.forEach(t => {
             galleryHtml += `
-                <div onclick="initFormBuilder(${t.TEMPLATE_ID})" class="p-8 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 hover:border-indigo-400/50 cursor-pointer transition text-left relative overflow-hidden group min-h-[220px] flex flex-col items-start justify-end">
+                <div onclick="(async()=>await initFormBuilder(${t.template_id}))()" class="p-8 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 hover:border-indigo-400/50 cursor-pointer transition text-left relative overflow-hidden group min-h-[220px] flex flex-col items-start justify-end">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-indigo-500/30 transition"></div>
                     <i class="fa-solid fa-file-lines text-3xl text-indigo-400/50 mb-auto"></i>
-                    <h3 class="text-xl font-bold text-indigo-300 relative z-10">${t.NAME}</h3>
-                    <p class="text-gray-400 text-sm mt-2 relative z-10 w-full line-clamp-2">${t.DESCRIPTION || ''}</p>
+                    <h3 class="text-xl font-bold text-indigo-300 relative z-10">${t.name}</h3>
+                    <p class="text-gray-400 text-sm mt-2 relative z-10 w-full line-clamp-2">${t.description || ''}</p>
                 </div>
             `;
         });
@@ -45,10 +60,10 @@ async function goCreateForm() {
 }
 
 // ── initFormBuilder ───────────────────────────────────────────────────────────
-function initFormBuilder(templateId = null, editData = null) {
-    work_area.className = "glass-bg flex-1 !overflow-y-auto p-12 m-8";
+async function initFormBuilder(templateId = null, editData = null) {
+    work_area.className = "glass-bg flex-1 !overflow-y-auto p-3 md:p-8 lg:p-12 m-1 md:m-4 lg:m-8";
     questionCount = 0;
-    window.editingFormId = editData ? editData.form.FORM_ID : null;
+    window.editingFormId = editData ? editData.form.form_id : null;
     window.editHasResponses = editData ? editData.hasResponses : false;
 
     const isEdit   = !!editData;
@@ -59,10 +74,10 @@ function initFormBuilder(templateId = null, editData = null) {
     const backAction  = isEdit ? 'goMyForms()' : 'goCreateForm()';
 
     work_area.innerHTML = `
-        <div class="grid grid-cols-[2fr_1fr] gap-x-12 items-start">
+        <div class="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-x-12 items-start">
 
             <!-- LEFT: FORM BUILDER -->
-            <div class="pt-4 w-[90%]">
+            <div class="pt-4 w-full xl:w-[90%]">
                 <div class="flex items-center gap-4 mb-8">
                     <button onclick="${backAction}" class="text-gray-400 hover:text-white transition w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center">
                         <i class="fa-solid fa-arrow-left"></i>
@@ -90,6 +105,9 @@ function initFormBuilder(templateId = null, editData = null) {
                     ${isLocked ? '' : `
                     <button onclick="addQuestion()" class="quick-btn">
                         <i class="fa-solid fa-plus"></i> Add Question
+                    </button>
+                    <button onclick="generateQuestionsAI()" class="px-6 py-3 rounded-full font-semibold text-sm transition-all bg-violet-500/15 border border-violet-500/30 text-violet-400 hover:bg-violet-500/25">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Suggest
                     </button>`}
 
                     <button onclick="previewForm()" class="quick-btn secondary">
@@ -104,7 +122,7 @@ function initFormBuilder(templateId = null, editData = null) {
             </div>
 
             <!-- RIGHT: SETTINGS PANEL -->
-            <div class="w-full self-start mt-24">
+            <div class="w-full self-start mt-6 xl:mt-24">
 
                 <h3 class="text-lg font-semibold text-emerald-400 mb-4">
                     Form Settings
@@ -113,21 +131,31 @@ function initFormBuilder(templateId = null, editData = null) {
                 <label class="text-sm text-gray-400">Access Type</label>
                 <select id="access_type" onchange="handleAccessTypeChange()"
                     class="w-full mt-2 mb-4 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white cursor-pointer">
-                    <option value="public">Public</option>
-                    <option value="group">Specific Group</option>
                 </select>
 
-                <div id="group_settings" class="hidden">
-                    <select id="target_dept"
+                <!-- Dept picker — shown when access_type needs a dept -->
+                <div id="setting_dept" class="hidden">
+                    <label class="text-sm text-gray-400">Department</label>
+                    <select id="target_dept_id"
                         class="w-full mt-2 mb-4 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white">
-                        <option value="" disabled selected>Select department</option>
-                        <option value="CSE">Computer Science</option>
-                        <option value="ECE">Electronics</option>
-                        <option value="EEE">Electrical</option>
-                        <option value="MECH">Mechanical</option>
-                        <option value="CIVIL">Civil</option>
-                        <option value="IT">Information Technology</option>
+                        <option value="" disabled selected>Loading departments...</option>
                     </select>
+                </div>
+
+                <!-- Role picker — shown for role / dept_role -->
+                <div id="setting_role" class="hidden">
+                    <label class="text-sm text-gray-400">Target Role</label>
+                    <select id="target_role"
+                        class="w-full mt-2 mb-4 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white">
+                        <option value="" disabled selected>Select role</option>
+                    </select>
+                </div>
+
+                <!-- Batch picker — shown for batch / dept_batch -->
+                <div id="setting_batch" class="hidden">
+                    <label class="text-sm text-gray-400">Target Batch Year</label>
+                    <input type="number" id="target_batch" placeholder="e.g. 2023"
+                        class="w-full mt-2 mb-4 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white"/>
                 </div>
 
                 <label class="text-sm text-gray-400">Deadline</label>
@@ -167,19 +195,25 @@ function initFormBuilder(templateId = null, editData = null) {
         </div>
     `;
 
-    // ── Set deadline min ──────────────────────────────────────────────────────
+    populateAccessTypeOptions();
+    await loadDepartmentsForPicker();
+
+    // ── Set deadline min to current time (allow today but from now onwards) ───
     const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById("deadline").min = now.toISOString().slice(0, 16);
+    const pad = n => String(n).padStart(2, '0');
+    const currentTime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    
+    document.getElementById("deadline").min = currentTime;
+
 
     // ── Load from template ────────────────────────────────────────────────────
     if (templateId && window.loadedTemplates) {
-        const tmpl = window.loadedTemplates.find(t => t.TEMPLATE_ID === templateId);
-        if (tmpl && tmpl.STRUCTURE) {
-            document.getElementById("form_title").value = tmpl.NAME;
-            document.getElementById("form_desc").value = tmpl.DESCRIPTION || '';
+        const tmpl = window.loadedTemplates.find(t => t.template_id === templateId);
+        if (tmpl && tmpl.structure) {
+            document.getElementById("form_title").value = tmpl.name;
+            document.getElementById("form_desc").value = tmpl.description || '';
             try {
-                const questions = JSON.parse(tmpl.STRUCTURE);
+                const questions = JSON.parse(tmpl.structure);
                 questions.forEach(qData => {
                     addQuestion();
                     const qDivs = document.querySelectorAll("#questions > div[data-id]");
@@ -215,24 +249,34 @@ function initFormBuilder(templateId = null, editData = null) {
     // ── Load from existing form (edit mode) ───────────────────────────────────
     if (editData) {
         const f = editData.form;
-        document.getElementById("form_title").value = f.TITLE || '';
-        document.getElementById("form_desc").value  = f.DESCRIPTION || '';
+        document.getElementById("form_title").value = f.title || '';
+        document.getElementById("form_desc").value  = f.description || '';
 
         // Format deadline for datetime-local
-        if (f.DEADLINE) {
-            const d = new Date(f.DEADLINE);
-            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-            document.getElementById("deadline").value = d.toISOString().slice(0, 16);
+        if (f.deadline) {
+            const d = new Date(f.deadline);
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById("deadline").value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
 
-        document.getElementById("access_type").value = f.ACCESS_TYPE || 'public';
+        populateAccessTypeOptions();
+        await loadDepartmentsForPicker();
+        document.getElementById("access_type").value = f.access_type || 'public';
         handleAccessTypeChange();
-        if (f.TARGET_DEPT) {
-            const td = document.getElementById("target_dept");
-            if (td) td.value = f.TARGET_DEPT;
+        if (f.target_dept_id) {
+            const td = document.getElementById("target_dept_id");
+            if (td) td.value = f.target_dept_id;
         }
-        document.getElementById("theme_color").value    = f.THEME_COLOR || 'emerald';
-        document.getElementById("allow_multiple").checked = f.ALLOW_MULTIPLE === 'yes';
+        if (f.target_role) {
+            const tr = document.getElementById("target_role");
+            if (tr) tr.value = f.target_role;
+        }
+        if (f.target_batch) {
+            const tb = document.getElementById("target_batch");
+            if (tb) tb.value = f.target_batch;
+        }
+        document.getElementById("theme_color").value    = f.theme_color || 'emerald';
+        document.getElementById("allow_multiple").checked = f.allow_multiple === 'yes';
 
         // Load questions
         editData.questions.forEach(q => {
@@ -240,21 +284,21 @@ function initFormBuilder(templateId = null, editData = null) {
             const qDivs   = document.querySelectorAll("#questions > div[data-id]");
             const currentQ = qDivs[qDivs.length - 1];
 
-            currentQ.querySelector("input[type='text']").value    = q.QUESTION_TEXT;
-            currentQ.querySelector("input[type='checkbox']").checked = q.IS_REQUIRED === 1;
+            currentQ.querySelector("input[type='text']").value    = q.question_text;
+            currentQ.querySelector("input[type='checkbox']").checked = q.is_required === 1;
 
             const qtypeSelect = currentQ.querySelector("select");
-            qtypeSelect.value = q.QUESTION_TYPE;
+            qtypeSelect.value = q.question_type;
             qtypeSelect.dispatchEvent(new Event('change'));
 
-            if (q.QUESTION_TYPE === 'mcq') {
+            if (q.question_type === 'mcq') {
                 const optContainer = currentQ.querySelector(".options");
                 optContainer.innerHTML = '';
-                const qOptions = editData.options.filter(o => o.QUESTION_ID === q.QUESTION_ID);
+                const qOptions = editData.options.filter(o => o.question_id === q.question_id);
                 qOptions.forEach(opt => {
                     optContainer.insertAdjacentHTML("beforeend", createOptionHTML());
                     const optInputs = currentQ.querySelectorAll(".options input[type='text']");
-                    optInputs[optInputs.length - 1].value = opt.OPTION_TEXT;
+                    optInputs[optInputs.length - 1].value = opt.option_text;
                 });
                 optContainer.insertAdjacentHTML("beforeend", `
                     <button type="button" onclick="addOption(this)" class="block mx-auto text-emerald-400 text-sm mt-3 add-option-btn">
@@ -284,12 +328,99 @@ let questionCount = 0;
 let dragSrc = null;
 
 function handleAccessTypeChange() {
-    const type = document.getElementById("access_type").value;
-    const groupDiv = document.getElementById("group_settings");
-    if (type === "group") {
-        groupDiv.classList.remove("hidden");
-    } else {
-        groupDiv.classList.add("hidden");
+    const type     = document.getElementById("access_type").value;
+    const userData = JSON.parse(localStorage.getItem("ff_user") ?? 'null');
+    const role     = userData?.role || 'student';
+
+    // Students can only target their OWN dept/batch — no picker needed
+    const isStudent = role === 'student';
+
+    const needsDept  = ['dept', 'dept_batch', 'dept_role'].includes(type);
+    const needsRole  = ['role', 'dept_role'].includes(type);
+    const needsBatch = ['batch', 'dept_batch'].includes(type);
+
+    // Show dept picker only for non-students who need it
+    document.getElementById("setting_dept").classList.toggle("hidden", !needsDept || isStudent);
+    // Role picker — students never see this (no role targeting for students)
+    document.getElementById("setting_role").classList.toggle("hidden", !needsRole);
+    // Batch picker only for non-students
+    document.getElementById("setting_batch").classList.toggle("hidden", !needsBatch || isStudent);
+}
+
+// Populate access_type options based on user role
+function populateAccessTypeOptions() {
+    const userData = JSON.parse(localStorage.getItem("ff_user") ?? 'null');
+    const role     = userData?.role || 'student';
+    const sel      = document.getElementById("access_type");
+    if (!sel) return;
+
+    const options = {
+        admin:   [
+            { value: 'public',     label: 'Public — Everyone in institution' },
+            { value: 'dept',       label: 'Department — Specific department' },
+            { value: 'batch',      label: 'Batch — Specific year' },
+            { value: 'role',       label: 'Role — Specific role' },
+            { value: 'dept_batch', label: 'Department + Batch' },
+            { value: 'dept_role',  label: 'Department + Role' },
+        ],
+        hod:     [
+            { value: 'public',     label: 'Public — Everyone in institution' },
+            { value: 'dept',       label: 'Department — Specific department' },
+            { value: 'batch',      label: 'Batch — Specific year' },
+            { value: 'role',       label: 'Role — Specific role' },
+            { value: 'dept_batch', label: 'Department + Batch' },
+            { value: 'dept_role',  label: 'Department + Role' },
+        ],
+        faculty: [
+            { value: 'public',     label: 'Public — Everyone in institution' },
+            { value: 'dept',       label: 'Department — Specific department' },
+            { value: 'role',       label: 'Role — All faculty (any department)' },
+            { value: 'dept_role',  label: 'Department + Role — e.g. CSE faculty only' },
+        ],
+        student: [
+            { value: 'public',     label: 'Public — Everyone in institution' },
+            { value: 'dept',       label: 'My Department' },
+            { value: 'batch',      label: 'My Batch' },
+            { value: 'dept_batch', label: 'My Department + My Batch' },
+        ],
+    };
+
+    const roleOptions = options[role] || options.student;
+    sel.innerHTML = roleOptions.map(o =>
+        `<option value="${o.value}">${o.label}</option>`
+    ).join('');
+
+    // Populate role dropdown options (restricted by creator role)
+    const roleEl = document.getElementById("target_role");
+    if (roleEl) {
+        const roleChoices = role === 'student' ? [] :
+            role === 'faculty' ? [{ v: 'faculty', l: 'Faculty' }] :
+            [
+                { v: 'hod',     l: 'HOD' },
+                { v: 'faculty', l: 'Faculty' },
+                { v: 'student', l: 'Student' },
+            ];
+        roleEl.innerHTML = `<option value="" disabled selected>Select role</option>` +
+            roleChoices.map(r => `<option value="${r.v}">${r.l}</option>`).join('');
+    }
+
+    handleAccessTypeChange();
+}
+
+async function loadDepartmentsForPicker() {
+    const userData = JSON.parse(localStorage.getItem("ff_user") || "null");
+    const institutionId = userData?.institutionId;
+    if (!institutionId) return;
+
+    try {
+        const res  = await fetch(`/institutions/${institutionId}/departments`);
+        const data = await res.json();
+        const sel  = document.getElementById("target_dept_id");
+        if (!sel) return;
+        sel.innerHTML = `<option value="" disabled selected>Select department</option>` +
+            data.map(d => `<option value="${d.dept_id}">${d.name}</option>`).join('');
+    } catch(e) {
+        console.error("Failed to load departments", e);
     }
 }
 
@@ -452,10 +583,10 @@ function previewForm() {
         const options = [];
         if (type === 'mcq') {
             q.querySelectorAll('.options input[type="text"]').forEach((opt, i) => {
-                if (opt.value.trim()) options.push({ QUESTION_ID: qId, OPTION_ID: i + 1, OPTION_TEXT: opt.value.trim() });
+                if (opt.value.trim()) options.push({ question_id: qId, option_id: i + 1, option_text: opt.value.trim() });
             });
         }
-        questions.push({ QUESTION_ID: qId, QUESTION_TEXT: text, QUESTION_TYPE: type, IS_REQUIRED: required ? 1 : 0, _options: options });
+        questions.push({ question_id: qId, question_text: text, question_type: type, is_required: required ? 1 : 0, _options: options });
         qId++;
     });
 
@@ -505,45 +636,80 @@ function previewForm() {
 // ── Show form code modal ──────────────────────────────────────────────────────
 function showFormCodeModal(code) {
     const modal = document.createElement("div");
-    modal.className = "fixed inset-0 flex items-center justify-center bg-black/60 z-50";
+    modal.className = "fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50";
     modal.innerHTML = `
-        <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl text-center w-[400px] border border-gray-700">
-            <h2 class="text-2xl font-bold text-emerald-400 mb-4">Form Created</h2>
-            <p class="text-gray-400 mb-4">Share this code to collect responses:</p>
-            <div class="bg-gray-800 border border-gray-700 px-4 py-3 rounded-lg text-lg font-mono select-all cursor-pointer">
-                ${code}
-            </div>
-            <button onclick="copyCode('${code}')" 
-                class="mt-4 bg-emerald-500 px-4 py-2 rounded-lg font-semibold">
-                Copy
+        <div class="relative w-full max-w-md mx-4 rounded-3xl bg-gray-900/90 backdrop-blur-xl border border-white/10 shadow-2xl p-8 text-center">
+            <button id="closeBtn" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition">
+                <i class="fa-solid fa-xmark"></i>
             </button>
-            <button onclick="this.closest('.fixed').remove()" 
-                class="mt-3 block text-gray-400 hover:text-white">
-                Close
+            
+            <h2 class="text-2xl font-bold text-emerald-400 mb-2">Form Created</h2>
+            <p class="text-gray-400 text-sm mb-6">Share this code with participants</p>
+            
+            <div class="bg-gray-800/50 border border-emerald-500/30 rounded-2xl p-5 mb-6 select-all cursor-pointer hover:border-emerald-500/50 transition">
+                <div class="text-3xl font-mono font-bold text-emerald-300 tracking-widest">${code}</div>
+            </div>
+            
+            <button id="copyBtn" class="w-40 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition">
+                <i class="fa-solid fa-copy mr-2"></i>Copy Code
             </button>
         </div>
     `;
+    
     document.body.appendChild(modal);
+    
+    document.getElementById('copyBtn').addEventListener('click', function() {
+        copyCode(code);
+        this.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Copied!';
+        this.classList.add('!bg-emerald-700');
+        setTimeout(() => {
+            this.innerHTML = '<i class="fa-solid fa-copy mr-2"></i>Copy Code';
+            this.classList.remove('!bg-emerald-700');
+        }, 2000);
+    });
+    
+    document.getElementById('closeBtn').addEventListener('click', function() {
+        modal.remove();
+    });
 }
 
 // ── Save / update form ────────────────────────────────────────────────────────
 function saveForm() {
-    const deadline      = document.getElementById("deadline").value;
+    const deadlineRaw   = document.getElementById("deadline").value;
+    const deadline      = deadlineRaw ? new Date(deadlineRaw).toISOString() : "";
     const access_type   = document.getElementById("access_type").value;
     const theme_color   = document.getElementById("theme_color").value;
     const allow_multiple = document.getElementById("allow_multiple").checked ? 'yes' : 'no';
     const isEdit        = !!window.editingFormId;
     const isLocked      = window.editHasResponses;
 
-    let target_dept = null;
-    if (access_type === "group") target_dept = document.getElementById("target_dept").value;
+    const userData   = JSON.parse(localStorage.getItem("ff_user") || "null");
+    const userRole   = userData?.role || 'student';
+    const isStudent  = userRole === 'student';
+
+    const target_dept_id = ['dept','dept_batch','dept_role'].includes(access_type)
+        ? (isStudent ? userData?.deptId : document.getElementById("target_dept_id").value) || null : null;
+    const target_role = ['role','dept_role'].includes(access_type)
+        ? document.getElementById("target_role").value || null : null;
+    const target_batch = ['batch','dept_batch'].includes(access_type)
+        ? (isStudent ? userData?.batch : document.getElementById("target_batch").value) || null : null;
 
     if (!deadline) { alert("Please set a deadline"); return; }
 
+    // Validate deadline is not in the past
+    const now = new Date().toISOString();
+    
+    if (deadline <= now) {
+        alert("Deadline cannot be in the past. Please select a future date and time.");
+        return;
+    }
+
+
     const form = {
-        title:       document.getElementById("form_title").value.trim(),
-        description: document.getElementById("form_desc").value.trim(),
-        access_type, target_dept, deadline, theme: theme_color, questions: []
+        title:         document.getElementById("form_title").value.trim(),
+        description:   document.getElementById("form_desc").value.trim(),
+        access_type, target_dept_id, target_role, target_batch,
+        deadline, theme: theme_color, questions: []
     };
 
     if (!form.title) { alert("Add a title to save the Form"); return; }
@@ -576,7 +742,10 @@ function saveForm() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 title: form.title, description: form.description,
-                access_type: form.access_type, target_dept: form.target_dept,
+                access_type: form.access_type,
+                target_dept_id: form.target_dept_id,
+                target_role: form.target_role,
+                target_batch: form.target_batch,
                 deadline: form.deadline, theme: form.theme,
                 allow_multiple, questions: form.questions, user_id: userId
             })
@@ -584,9 +753,9 @@ function saveForm() {
         .then(res => res.json())
         .then(data => {
             if (data.questionsLocked) {
-                showBanner('📋 Form metadata updated. Questions were kept unchanged (form has existing responses).', 'amber');
+                showBanner('<i class="fa-solid fa-clipboard mr-2"></i>Form metadata updated. Questions were kept unchanged (form has existing responses).', 'amber');
             } else {
-                showBanner('✅ Form updated successfully!', 'emerald');
+                showBanner('<i class="fa-solid fa-check mr-2"></i>Form updated successfully!', 'emerald');
             }
             setTimeout(() => goMyForms(), 1500);
         })
@@ -598,14 +767,19 @@ function saveForm() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 title: form.title, description: form.description,
-                access_type: form.access_type, target_dept: form.target_dept,
+                access_type: form.access_type,
+                target_dept_id: form.target_dept_id,
+                target_role: form.target_role,
+                target_batch: form.target_batch,
                 deadline: form.deadline, theme: form.theme,
                 allow_multiple, questions: form.questions, creator_id: userId
             })
         })
         .then(res => res.json())
-        .then(data => { showFormCodeModal(data.form_code); });
-        goCreateForm();
+        .then(data => {
+            showFormCodeModal(data.form_code); 
+            setTimeout(() => goCreateForm(), 1500);
+        });
     }
 }
 
@@ -619,7 +793,248 @@ function showBanner(message, color = 'emerald') {
     const banner = document.createElement('div');
     banner.id = 'save_banner';
     banner.className = `fixed top-6 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-xl border text-sm font-medium shadow-xl ${colors[color] || colors.emerald}`;
-    banner.textContent = message;
+    banner.innerHTML = message;
     document.body.appendChild(banner);
     setTimeout(() => banner.remove(), 3000);
+}
+
+// ── AI Generate Panel (from template gallery) ─────────────────────────────────
+function showAIGeneratePanel() {
+    work_area.className = "glass-bg flex-1 !overflow-y-auto p-3 md:p-8 lg:p-12 m-1 md:m-4 lg:m-8";
+    work_area.innerHTML = `
+        <div class="relative z-10 max-w-2xl mx-auto">
+            <div class="flex items-center gap-4 mb-8">
+                <button onclick="goCreateForm()" class="text-gray-400 hover:text-white transition w-10 h-10 rounded-full hover:bg-white/5 flex items-center justify-center">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h2 class="text-3xl font-bold text-violet-400 flex items-center gap-3">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate with AI
+                    </h2>
+                    <p class="text-gray-400 text-sm mt-1">Describe your form and AI will build it for you.</p>
+                </div>
+            </div>
+
+            <div class="p-6 rounded-2xl bg-white/5 border border-violet-500/20">
+                <label class="text-sm text-gray-400 mb-2 block">Describe your form</label>
+                <textarea id="ai_description" rows="4" placeholder="e.g. A course feedback form for students to rate faculty teaching quality, course difficulty, and provide suggestions..."
+                    class="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 text-white
+                           placeholder-gray-500 focus:outline-none focus:border-violet-500/50
+                           resize-none text-sm mb-4"></textarea>
+
+                <div class="flex items-center gap-4 mb-4">
+                    <label class="text-sm text-gray-400">Number of questions:</label>
+                    <select id="ai_num_questions"
+                        class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm">
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5" selected>5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="12">12</option>
+                        <option value="14">14</option>
+                        <option value="16">16</option>
+                        <option value="18">18</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+
+                <p id="ai_error" class="text-red-400 text-sm mb-3 hidden"></p>
+
+                <button id="ai_generate_btn" onclick="runAIGenerate()"
+                    class="w-full px-6 py-3 rounded-full font-semibold text-sm transition-all bg-violet-500/15 border border-violet-500/30 text-violet-400 hover:bg-violet-500/25">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Generate Form
+                </button>
+            </div>
+
+            <div id="ai_preview" class="hidden mt-6 p-6 rounded-2xl bg-white/5 border border-violet-500/20">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-white font-semibold">Generated Questions</h3>
+                    <button onclick="useGeneratedForm()"
+                        class="quick-btn text-sm px-4 py-2">
+                        <i class="fa-solid fa-check mr-1"></i> Use This Form
+                    </button>
+                </div>
+                <div id="ai_questions_preview" class="space-y-2"></div>
+            </div>
+        </div>
+    `;
+}
+
+async function runAIGenerate() {
+    const description   = document.getElementById('ai_description').value.trim();
+    const num_questions = document.getElementById('ai_num_questions').value;
+    const errEl         = document.getElementById('ai_error');
+    const btn           = document.getElementById('ai_generate_btn');
+
+    errEl.classList.add('hidden');
+
+    if (!description) {
+        errEl.textContent = 'Please describe your form first.';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    btn.disabled  = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generating...';
+
+    try {
+        const res  = await fetch('/ai/generate-form', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ description, num_questions: Number(num_questions) })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            errEl.textContent = data.message || 'Generation failed. Try again.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        // Store generated questions globally
+        window._aiGeneratedQuestions = data.questions;
+
+        // Show preview
+        const preview = document.getElementById('ai_preview');
+        const list    = document.getElementById('ai_questions_preview');
+        preview.classList.remove('hidden');
+
+        const typeIcon = { text:'font', textarea:'align-left', number:'hashtag', email:'envelope', date:'calendar', mcq:'list-ul' };
+
+        list.innerHTML = data.questions.map((q, i) => `
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                <span class="text-violet-400 text-xs mt-1 w-5 flex-shrink-0">
+                    <i class="fa-solid fa-${typeIcon[q.type] || 'circle-dot'}"></i>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-white text-sm">${q.text} ${q.required ? '<span class="text-red-400">*</span>' : ''}</p>
+                    <p class="text-gray-500 text-xs mt-0.5">${q.type}${q.options ? ` · ${q.options.join(', ')}` : ''}</p>
+                </div>
+            </div>
+        `).join('');
+
+    } catch(e) {
+        errEl.textContent = 'Connection error. Please try again.';
+        errEl.classList.remove('hidden');
+    } finally {
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Regenerate';
+    }
+}
+
+async function useGeneratedForm() {
+    const questions = window._aiGeneratedQuestions;
+    if (!questions?.length) return;
+
+    // Initialize blank form builder then populate with AI questions
+    await initFormBuilder();
+
+    // Clear the default empty question
+    document.getElementById('questions').innerHTML = '';
+    questionCount = 0;
+
+    // Add each AI-generated question
+    for (const q of questions) {
+        addQuestion();
+        const qDivs    = document.querySelectorAll('#questions > div[data-id]');
+        const currentQ = qDivs[qDivs.length - 1];
+
+        currentQ.querySelector("input[type='text']").value    = q.text;
+        currentQ.querySelector("input[type='checkbox']").checked = q.required;
+
+        const typeSelect = currentQ.querySelector('select');
+        typeSelect.value = q.type;
+        typeSelect.dispatchEvent(new Event('change'));
+
+        if (q.type === 'mcq' && Array.isArray(q.options)) {
+            const optContainer = currentQ.querySelector('.options');
+            optContainer.innerHTML = '';
+            q.options.forEach(opt => {
+                optContainer.insertAdjacentHTML('beforeend', createOptionHTML());
+                const inputs = currentQ.querySelectorAll('.options input[type="text"]');
+                inputs[inputs.length - 1].value = opt;
+            });
+            optContainer.insertAdjacentHTML('beforeend', `
+                <button type="button" onclick="addOption(this)" class="block mx-auto text-emerald-400 text-sm mt-3 add-option-btn">
+                    <i class="fa-solid fa-plus"></i> Add Option
+                </button>
+            `);
+        }
+    }
+
+    showBanner('<i class="fa-solid fa-wand-magic-sparkles mr-2"></i> AI questions loaded! Review and publish.', 'emerald');
+}
+
+// ── AI Suggest (from inside form builder) ─────────────────────────────────────
+async function generateQuestionsAI() {
+    const title = document.getElementById('form_title')?.value.trim();
+    const desc  = document.getElementById('form_desc')?.value.trim();
+
+    const description = [title, desc].filter(Boolean).join(' — ') || '';
+
+    if (!description) {
+        showBanner('<i class="fa-solid fa-triangle-exclamation mr-2"></i> Add a title or description first so AI knows what to generate.', 'amber');
+        return;
+    }
+
+    // Show inline loading state
+    const btn = document.querySelector('button[onclick="generateQuestionsAI()"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...'; }
+
+    try {
+        const existingCount = document.querySelectorAll('#questions > div[data-id]').length;
+        const num           = Math.max(3, 6 - existingCount); // suggest up to 6 total
+
+        const res  = await fetch('/ai/generate-form', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ description, num_questions: num })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            showBanner(`<i class="fa-solid fa-circle-exclamation mr-2"></i> ${data.message}`, 'amber');
+            return;
+        }
+
+        // Append generated questions to existing ones
+        for (const q of data.questions) {
+            addQuestion();
+            const qDivs    = document.querySelectorAll('#questions > div[data-id]');
+            const currentQ = qDivs[qDivs.length - 1];
+
+            currentQ.querySelector("input[type='text']").value       = q.text;
+            currentQ.querySelector("input[type='checkbox']").checked = q.required;
+
+            const typeSelect = currentQ.querySelector('select');
+            typeSelect.value = q.type;
+            typeSelect.dispatchEvent(new Event('change'));
+
+            if (q.type === 'mcq' && Array.isArray(q.options)) {
+                const optContainer = currentQ.querySelector('.options');
+                optContainer.innerHTML = '';
+                q.options.forEach(opt => {
+                    optContainer.insertAdjacentHTML('beforeend', createOptionHTML());
+                    const inputs = currentQ.querySelectorAll('.options input[type="text"]');
+                    inputs[inputs.length - 1].value = opt;
+                });
+                optContainer.insertAdjacentHTML('beforeend', `
+                    <button type="button" onclick="addOption(this)" class="block mx-auto text-emerald-400 text-sm mt-3 add-option-btn">
+                        <i class="fa-solid fa-plus"></i> Add Option
+                    </button>
+                `);
+            }
+        }
+
+        showBanner(`<i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Added ${data.questions.length} AI-suggested questions!`, 'emerald');
+
+    } catch(e) {
+        showBanner('<i class="fa-solid fa-circle-exclamation mr-2"></i> AI generation failed. Please try again.', 'amber');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Suggest'; }
+    }
 }

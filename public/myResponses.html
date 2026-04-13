@@ -174,7 +174,7 @@
             try {
                 const res  = await fetch(`/auth/user/${userId}`);
                 const data = await res.json();
-                name = data.NAME || name;
+                name = data.name || name;
             } catch (_) {}
 
             work_area.innerHTML = `
@@ -236,7 +236,7 @@
                 const responsesData = await responsesRes.json();
                 if (Array.isArray(formsData)) {
                     document.getElementById("stat-forms").textContent  = formsData.length;
-                    document.getElementById("stat-active").textContent = formsData.filter(f => f.STATUS === "open").length;
+                    document.getElementById("stat-active").textContent = formsData.filter(f => f.status === "open").length;
                 }
                 if (Array.isArray(responsesData)) {
                     document.getElementById("stat-responses").textContent = responsesData.length;

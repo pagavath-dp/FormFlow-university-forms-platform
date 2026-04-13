@@ -1,6 +1,6 @@
 // Fill a Form
 function goFillForm() {
-    work_area.className = "glass-bg flex-1 flex flex-col p-12 m-8 !overflow-y-auto";
+    work_area.className = "glass-bg flex-1 flex flex-col p-3 md:p-8 lg:p-12 m-1 md:m-4 lg:m-8 !overflow-y-auto";
     work_area.innerHTML = `
         <div class="content-card my-auto mx-auto w-full max-w-2xl transition-all duration-300" style="height: fit-content;">
 
@@ -20,7 +20,7 @@ function goFillForm() {
 
 async function loadFormByCode() {
     
-    const  code = document.getElementById("form_code_input").value.trim();
+    const code = document.getElementById("form_code_input").value.trim();
     const area = document.getElementById("fill_form_area");
     const form_code_area = document.getElementById("form_code_area");
 
@@ -29,9 +29,7 @@ async function loadFormByCode() {
         return;
     }
 
-    const params = new URLSearchParams(location.search);
-    const userId = params.get("user_id");
-
+    const userId = JSON.parse(localStorage.getItem("ff_user") || "null")?.id;
     const res = await fetch(`/forms/code/${code}?user_id=${userId}`);
     const data = await res.json();
 
@@ -147,7 +145,7 @@ function renderFillForm(data) {
     const { form, questions, options } = data;
     const area = document.getElementById("fill_form_area");
 
-    const tc = form.THEME_COLOR?.toLowerCase()?.trim() || 'emerald';
+    const tc = form.theme_color?.toLowerCase()?.trim() || 'emerald';
     
     let titleColor = "text-emerald-400";
     let btnColor = "bg-gradient-to-br from-emerald-500 to-emerald-700";
@@ -171,10 +169,10 @@ function renderFillForm(data) {
     card.className = `content-card my-auto mx-auto w-full max-w-2xl transition-all duration-500 border-t-8 ${borderTopColor} ${glowClass}`;
 
     area.innerHTML = `
-        <h3 class="text-3xl font-bold mb-3 mt-6 ${titleColor}">${form.TITLE}</h3>
-        <p class="text-gray-300 mb-8 leading-relaxed">${form.DESCRIPTION || ""}</p>
+        <h3 class="text-3xl font-bold mb-3 mt-6 ${titleColor}">${form.title}</h3>
+        <p class="text-gray-300 mb-8 leading-relaxed">${form.description || ""}</p>
 
-        <form onsubmit="submitResponse(event, ${form.FORM_ID})" class="space-y-6"> 
+        <form onsubmit="submitResponse(event, ${form.form_id})" class="space-y-6"> 
             ${questions.map(q => renderQuestion(q, options, tc)).join("")}
             <button type="submit" class="w-full text-white font-bold py-3 px-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 ${btnColor}">
                 Submit Response
@@ -195,39 +193,39 @@ function renderQuestion(q, options, tc) {
     let html = `
         <div class="p-6 rounded-xl bg-white/5 border border-white/10 border-l-4 ${qBorder} shadow-sm transition-all duration-300 hover:bg-white/10">
         <label class="block mb-4 font-semibold text-lg text-white"> 
-            ${q.QUESTION_TEXT} ${q.IS_REQUIRED ? '<span class="text-red-500">*</span>' : ''} 
+            ${q.question_text} ${q.is_required ? '<span class="text-red-500">*</span>' : ''} 
         </label>
     `;
 
-    if (q.QUESTION_TYPE === "text") {
-        html += `<input type="text" name="q_${q.QUESTION_ID}" placeholder="Enter your answer..." class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition ${focusRing}" ${q.IS_REQUIRED ? "required" : ""} />`;
+    if (q.question_type === "text") {
+        html += `<input type="text" name="q_${q.question_id}" placeholder="Enter your answer..." class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition ${focusRing}" ${q.is_required ? "required" : ""} />`;
     }
 
-    if (q.QUESTION_TYPE === "textarea") {
-        html += `<textarea name="q_${q.QUESTION_ID}" placeholder="Enter your answer..." rows="4" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition resize-none ${focusRing}" ${q.IS_REQUIRED ? "required" : ""}></textarea>`;
+    if (q.question_type === "textarea") {
+        html += `<textarea name="q_${q.question_id}" placeholder="Enter your answer..." rows="4" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition resize-none ${focusRing}" ${q.is_required ? "required" : ""}></textarea>`;
     }
 
-    if (q.QUESTION_TYPE === "email") {
-        html += `<input type="email" name="q_${q.QUESTION_ID}" placeholder="you@example.com" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition ${focusRing}" ${q.IS_REQUIRED ? "required" : ""} />`;
+    if (q.question_type === "email") {
+        html += `<input type="email" name="q_${q.question_id}" placeholder="you@example.com" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition ${focusRing}" ${q.is_required ? "required" : ""} />`;
     }
 
-    if (q.QUESTION_TYPE === "date") {
-        html += `<input type="date" name="q_${q.QUESTION_ID}" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition ${focusRing} [color-scheme:dark]" ${q.IS_REQUIRED ? "required" : ""} />`;
+    if (q.question_type === "date") {
+        html += `<input type="date" name="q_${q.question_id}" class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white focus:outline-none focus:ring-2 transition ${focusRing} [color-scheme:dark]" ${q.is_required ? "required" : ""} />`;
     }
 
-    if (q.QUESTION_TYPE === "number") {
-        html += `<input type="number" name="q_${q.QUESTION_ID}" placeholder="Enter a number..." class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none focus:ring-2 transition ${focusRing}"
-            ${q.IS_REQUIRED ? "required" : ""} />`;
+    if (q.question_type === "number") {
+        html += `<input type="number" name="q_${q.question_id}" placeholder="Enter a number..." class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none focus:ring-2 transition ${focusRing}"
+            ${q.is_required ? "required" : ""} />`;
     }
 
-    if (q.QUESTION_TYPE === "mcq") {
+    if (q.question_type === "mcq") {
         options
-        .filter(o => o.QUESTION_ID === q.QUESTION_ID)
+        .filter(o => o.question_id === q.question_id)
         .forEach(o => {
             html += `
                 <label class="flex items-center gap-3 my-3 text-gray-300 cursor-pointer hover:text-white transition">
-                    <input type="radio" name="q_${q.QUESTION_ID}" value="${o.OPTION_ID}" ${q.IS_REQUIRED ? "required" : ""} class="${accentBtn} w-5 h-5 transition"/> 
-                    <span class="text-base">${o.OPTION_TEXT}</span>
+                    <input type="radio" name="q_${q.question_id}" value="${o.option_id}" ${q.is_required ? "required" : ""} class="${accentBtn} w-5 h-5 transition"/> 
+                    <span class="text-base">${o.option_text}</span>
                 </label>
             `;
         });

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <title>FormFlow Admin</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'DM Sans', sans-serif; }
+
+        /* ── Remap emerald → blue for embedded form builder scripts ── */
+        .text-emerald-400 { color: #60a5fa !important; }
+        .text-emerald-400\/50 { color: rgba(96,165,250,.5) !important; }
+        .border-emerald-400\/50 { border-color: rgba(96,165,250,.5) !important; }
+        .hover\:border-emerald-400\/50:hover { border-color: rgba(96,165,250,.5) !important; }
+        .bg-emerald-500\/20 { background-color: rgba(30,64,175,.25) !important; }
+        .bg-emerald-500\/30 { background-color: rgba(30,64,175,.35) !important; }
+        .hover\:bg-emerald-500\/30:hover { background-color: rgba(30,64,175,.35) !important; }
+        .border-emerald-500\/50 { border-color: rgba(37,99,235,.5) !important; }
+        .focus\:border-emerald-500\/50:focus { border-color: rgba(37,99,235,.5) !important; }
+        .text-emerald-300 { color: #93c5fd !important; }
+        .from-emerald-500 { --tw-gradient-from: #1e40af !important; }
+        .to-emerald-700 { --tw-gradient-to: #1e3a5f !important; }
+        .from-emerald-400 { --tw-gradient-from: #60a5fa !important; }
+        .via-cyan-400 { --tw-gradient-via: #38bdf8 !important; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(107,114,128,.6); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(107,114,128,.8); }
+        * { scrollbar-color: rgba(107,114,128,.6) transparent; scrollbar-width: thin; }
+
+        body { background: #080c14; }
+
+        #bg_overlay {
+            position: fixed; inset: 0; pointer-events: none;
+            background: radial-gradient(ellipse at top left, #0d1828 0%, #080c14 60%);
+        }
+
+        .nav-btn {
+            width: 100%; padding: .85rem 1rem; border-radius: 1rem;
+            background: rgba(255,255,255,.06); display: flex; gap: 12px;
+            align-items: center; transition: .25s ease; color: #d1d5db; font-size: 14px;
+        }
+        .nav-btn:hover  { background: rgba(30,64,175,.2);  padding-left: 1.375rem; color: #fff; }
+        .nav-btn.active { background: rgba(30,64,175,.28); padding-left: 1.375rem; color: #fff; }
+        .nav-btn i { width: 1.1rem; text-align: center; flex-shrink: 0; }
+
+        .glass-bg {
+            position: relative; background: rgba(255,255,255,.05);
+            backdrop-filter: blur(18px); border-radius: 1.25rem;
+            border: 1px solid rgba(255,255,255,.1);
+            box-shadow: 0 30px 80px rgba(0,0,0,.6); overflow: hidden;
+        }
+        @media(min-width:768px){ .glass-bg { border-radius: 2rem; } }
+        .glass-bg::before { content:""; position:absolute; inset:0; pointer-events:none; }
+        .glass-bg::after  { content:""; position:absolute; inset:0; pointer-events:none; }
+
+        #work_area {
+            background:
+                radial-gradient(circle at 20% 30%, rgba(30,64,175,.12), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(30,58,138,.10), transparent 40%);
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+            border-radius: 1.25rem; padding: 1.25rem; flex: 1;
+            transition: border-color .2s, transform .2s;
+        }
+        .stat-card:hover { border-color: rgba(30,64,175,.3); transform: translateY(-2px); }
+
+        .quick-btn {
+            background: linear-gradient(135deg, #1e3a5f, #1e40af);
+            padding: .75rem 1.5rem; border-radius: 9999px; font-weight: 600;
+            cursor: pointer; border: none; color: #fff; transition: .2s ease; font-size: 14px;
+        }
+        .quick-btn:hover { box-shadow: 0 8px 24px rgba(30,64,175,.35); }
+        .quick-btn.secondary {
+            background: transparent; border: 1.5px solid #2563eb; color: #60a5fa;
+        }
+        .quick-btn.secondary:hover { background: rgba(30,64,175,.1); box-shadow: none; }
+        .quick-btn.danger {
+            background: transparent; border: 1.5px solid #f87171; color: #f87171;
+        }
+        .quick-btn.danger:hover { background: rgba(239,68,68,.1); }
+
+        /* Form builder styles */
+        .content-card {
+            position: relative; z-index: 10;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 1.25rem; padding: 1.5rem; width: 100%; max-width: 750px;
+        }
+        @media(min-width:768px){ .content-card { border-radius: 1.5rem; padding: 2.5rem; } }
+        input[type="datetime-local"] { background: #1f2937; border: 1px solid #374151; color-scheme: dark; }
+        [draggable="true"] { cursor: grab; }
+        [draggable="true"]:active { cursor: grabbing; }
+        .drag-ghost { opacity: .35; transform: scale(.98); transition: none; }
+        .drag-over-top    { box-shadow: 0 -3px 0 0 rgba(30,64,175,.7) !important; }
+        .drag-over-bottom { box-shadow: 0  3px 0 0 rgba(30,64,175,.7) !important; }
+
+        .field {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 14px;
+            outline: none; transition: border-color .2s;
+        }
+        .field:focus { border-color: rgba(30,64,175,.7); }
+        .field::placeholder { color: rgba(255,255,255,.3); }
+        .field option { background: #0f172a; }
+
+        .badge {
+            display: inline-block; padding: 2px 10px; border-radius: 9999px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+        }
+        .badge-admin   { background: rgba(30,64,175,.25);  color: #93c5fd; }
+        .badge-hod     { background: rgba(124,58,237,.2);  color: #c4b5fd; }
+        .badge-faculty { background: rgba(244,63,94,.15);  color: #fda4af; }
+        .badge-student { background: rgba(56,189,248,.15); color: #7dd3fc; }
+        .badge-active  { background: rgba(16,185,129,.15); color: #6ee7b7; }
+        .badge-pending { background: rgba(245,158,11,.15); color: #fcd34d; }
+
+        /* .mob-nav-btn {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 3px; padding: 10px 4px 8px;
+            color: #6b7280; font-size: 10px; transition: color .2s; cursor: pointer;
+        }
+        .mob-nav-btn i { font-size: 18px; }
+        .mob-nav-btn:hover { color: #60a5fa; } */
+
+        .tab-btn {
+            flex: 1; padding: 8px; border-radius: 8px; font-size: 13px;
+            font-weight: 500; cursor: pointer; transition: .2s;
+            color: #9ca3af; background: transparent; border: none;
+        }
+        .tab-btn.active {
+            background: rgba(30,64,175,.2); color: #93c5fd;
+            border: 1px solid rgba(30,64,175,.35);
+        }
+    </style>
+</head>
+<body class="h-screen text-white overflow-hidden" id="app_body">
+<div class="fixed inset-0" id="bg_overlay"></div>
+<div id="sidebar_overlay"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden lg:hidden"
+     onclick="closeSidebar()"></div>
+
+<div class="relative h-screen flex flex-col lg:flex-row">
+
+    <!-- Mobile Header -->
+    <header class="lg:hidden flex items-center justify-between px-4 py-3
+                   border-b border-white/10 bg-black/30 backdrop-blur-xl flex-shrink-0 z-30 relative">
+        <div class="flex items-center gap-2">
+            <span class="text-xl font-bold text-blue-400">FormFlow</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300
+                         border border-blue-800/50 font-medium">Admin</span>
+        </div>
+        <button onclick="toggleSidebar()"
+                class="w-10 h-10 rounded-xl bg-white/5 border border-white/10
+                       flex items-center justify-center text-gray-300 hover:text-white transition">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+           class="fixed lg:relative inset-y-0 left-0 z-50 w-72 lg:w-80 p-5 lg:p-7
+                  backdrop-blur-xl bg-gray-950/95 lg:bg-white/5 border-r border-white/10
+                  flex flex-col flex-shrink-0 -translate-x-full lg:translate-x-0
+                  transition-transform duration-300 ease-in-out h-full overflow-y-auto">
+        <div class="lg:hidden flex justify-between items-center mb-6">
+            <div class="flex items-center gap-2">
+                <span class="text-xl font-bold text-blue-400">FormFlow</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 border border-blue-800/50">Admin</span>
+            </div>
+            <button onclick="closeSidebar()" class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="hidden lg:flex items-center gap-2 mb-10">
+            <h2 class="text-2xl font-bold text-blue-400">FormFlow</h2>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 border border-blue-800/50 font-medium">Admin</span>
+        </div>
+        <nav class="space-y-3">
+            <button onclick="setActive(this); goOverview(); closeSidebar()" class="nav-btn active">
+                <i class="fa-solid fa-house"></i> Overview
+            </button>
+            <button onclick="setActive(this); goMembers(); closeSidebar()" class="nav-btn">
+                <i class="fa-solid fa-users"></i> Members
+            </button>
+            <button onclick="setActive(this); goDepartments(); closeSidebar()" class="nav-btn">
+                <i class="fa-solid fa-sitemap"></i> Departments
+            </button>
+            <button onclick="setActive(this); goForms(); closeSidebar()" class="nav-btn">
+                <i class="fa-solid fa-file-lines"></i> All Forms
+            </button>
+            <button onclick="setActive(this); goAuditLogs(); closeSidebar()" class="nav-btn">
+                <i class="fa-solid fa-terminal"></i> Audit Logs
+            </button>
+            <hr class="border-white/10 my-2"/>
+            <button onclick="setActive(this); goCreateForm(); closeSidebar()" class="nav-btn">
+                <i class="fa-solid fa-plus"></i> New Form
+            </button>
+            <button onclick="setActive(this); goMyForms(); closeSidebar()" class="nav-btn">
+                <i class="fa-solid fa-file"></i> My Forms
+            </button>
+        </nav>
+        <div class="mt-auto pt-6 border-t border-white/10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-full bg-blue-900/40 text-blue-400 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-white truncate max-w-[120px]" id="sidebar_admin_name">Admin</p>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5" id="sidebar_inst_name">Institution</p>
+                    </div>
+                </div>
+                <button onclick="confirmLogout()" class="w-9 h-9 rounded-full hover:bg-white/5 text-gray-400 hover:text-red-400 transition flex items-center justify-center" title="Sign Out">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 p-2 md:p-4 lg:p-8 overflow-y-auto flex flex-col pb-20 lg:pb-8" id="work_area_outer">
+        <div id="work_area" class="glass-bg flex-1 p-4 md:p-8 lg:p-10">
+            <p class="text-gray-400">Loading...</p>
+        </div>
+    </main>
+
+    <!-- Mobile Bottom Nav -->
+    <!-- <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-gray-950/95 backdrop-blur-xl border-t border-white/10 flex items-stretch">
+        <button onclick="goOverview()"    class="mob-nav-btn"><i class="fa-solid fa-house"></i><span>Overview</span></button>
+        <button onclick="goMembers()"     class="mob-nav-btn"><i class="fa-solid fa-users"></i><span>Members</span></button>
+        <button onclick="goDepartments()" class="mob-nav-btn"><i class="fa-solid fa-sitemap"></i><span>Depts</span></button>
+        <button onclick="goCreateForm()"  class="mob-nav-btn"><i class="fa-solid fa-plus"></i><span>New</span></button>
+        <button onclick="goMyForms()"     class="mob-nav-btn"><i class="fa-solid fa-file"></i><span>My Forms</span></button>
+    </nav> -->
+</div>
+
+<!-- Logout Modal -->
+<div id="logout_modal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center px-4"
+     onclick="if(event.target===this) closeLogoutModal()">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div id="logout_modal_card"
+         class="relative z-10 w-full max-w-[360px] bg-gray-900/90 border border-white/10
+                rounded-2xl p-8 shadow-[0_30px_80px_rgba(0,0,0,.7)]
+                scale-95 opacity-0 transition-all duration-200 ease-out text-center">
+        <div class="w-16 h-16 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-5">
+            <i class="fa-solid fa-right-from-bracket text-red-400 text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">Sign out?</h3>
+        <p class="text-gray-400 text-sm mb-7">You'll be returned to the business sign-in page.</p>
+        <div class="flex gap-3">
+            <button onclick="closeLogoutModal()" class="flex-1 py-2.5 rounded-xl bg-white/6 border border-white/10 text-gray-300 hover:bg-white/10 transition text-sm font-medium">Cancel</button>
+            <button onclick="logout()" class="flex-1 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition text-sm font-semibold">
+                <i class="fa-solid fa-power-off mr-1.5"></i> Sign Out
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── AUTH GUARD ────────────────────────────────────────────────────────────────
+const adminToken = localStorage.getItem("ff_token");
+const adminData  = JSON.parse(localStorage.getItem("ff_user") || "null");
+
+if (!adminToken || !adminData || adminData.role !== "admin") {
+    localStorage.removeItem("ff_token");
+    localStorage.removeItem("ff_user");
+    location.replace("/business.html");
+} else {
+    try {
+        const payload = JSON.parse(atob(adminToken.split('.')[1]));
+        if (payload.exp * 1000 < Date.now()) {
+            localStorage.removeItem("ff_token");
+            localStorage.removeItem("ff_user");
+            location.replace("/business.html");
+        }
+    } catch(e) { location.replace("/business.html"); }
+}
+
+const institutionId = adminData?.institutionId;
+const work_area     = document.getElementById("work_area");
+
+document.getElementById("sidebar_admin_name").textContent = adminData?.name || "Admin";
+document.getElementById("sidebar_inst_name").textContent  = adminData?.institutionName || "Institution";
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function toggleSidebar() {
+    const s = document.getElementById('sidebar'), o = document.getElementById('sidebar_overlay');
+    const open = !s.classList.contains('-translate-x-full');
+    s.classList.toggle('-translate-x-full', open);
+    o.classList.toggle('hidden', open);
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('sidebar_overlay').classList.add('hidden');
+}
+function setActive(btn) {
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    if (btn?.classList.contains("nav-btn")) btn.classList.add("active");
+}
+function confirmLogout() {
+    document.getElementById('logout_modal').classList.remove('hidden');
+    requestAnimationFrame(() => document.getElementById('logout_modal_card').classList.remove('scale-95','opacity-0'));
+}
+function closeLogoutModal() {
+    document.getElementById('logout_modal_card').classList.add('scale-95','opacity-0');
+    setTimeout(() => document.getElementById('logout_modal').classList.add('hidden'), 200);
+}
+function logout() {
+    localStorage.removeItem("ff_token");
+    localStorage.removeItem("ff_user");
+    location.replace("/business.html");
+}
+async function adminFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        headers: {
+            'Authorization': `Bearer ${adminToken}`,
+            ...(options.headers || {})
+        }
+    });
+}
+function roleBadge(role) {
+    return `<span class="badge badge-${role}">${role}</span>`;
+}
+function statusBadge(status) {
+    return `<span class="badge badge-${status}">${status}</span>`;
+}
+function formatDate(ts) {
+    return new Date(ts).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+async function goOverview() {
+    work_area.className = "glass-bg flex-1 p-4 md:p-8 flex items-center justify-center !overflow-y-auto";
+    work_area.innerHTML = `
+        <div class="relative z-10 w-full max-w-3xl mx-auto">
+            <h1 class="text-2xl md:text-3xl font-bold text-white mb-1">
+                Welcome back, ${adminData?.name || 'Admin'}
+            </h1>
+            <p class="text-gray-400 mb-6 text-sm">
+                Managing <span class="text-blue-400 font-semibold">${adminData?.institutionName || 'your institution'}</span>
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="stat-card"><p class="text-gray-400 text-xs mb-1">Members</p><h2 id="stat_members" class="text-2xl font-bold">--</h2></div>
+                <div class="stat-card"><p class="text-gray-400 text-xs mb-1">Pending</p><h2 id="stat_pending" class="text-2xl font-bold text-amber-400">--</h2></div>
+                <div class="stat-card"><p class="text-gray-400 text-xs mb-1">Forms</p><h2 id="stat_forms" class="text-2xl font-bold">--</h2></div>
+                <div class="stat-card"><p class="text-gray-400 text-xs mb-1">Responses</p><h2 id="stat_responses" class="text-2xl font-bold">--</h2></div>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <button onclick="goMembers()" class="quick-btn"><i class="fa-solid fa-user-plus mr-2"></i>Manage Members</button>
+                <button onclick="goDepartments()" class="quick-btn secondary"><i class="fa-solid fa-sitemap mr-2"></i>Departments</button>
+            </div>
+        </div>
+    `;
+    try {
+        const res  = await adminFetch(`/admin/stats?institution_id=${institutionId}`);
+        const data = await res.json();
+        document.getElementById('stat_members').textContent   = data.member_count || 0;
+        document.getElementById('stat_pending').textContent   = data.pending_count || 0;
+        document.getElementById('stat_forms').textContent     = data.form_count || 0;
+        document.getElementById('stat_responses').textContent = data.response_count || 0;
+    } catch(e) { console.error(e); }
+}
+
+// ── MEMBERS ───────────────────────────────────────────────────────────────────
+async function goMembers() {
+    work_area.className = "glass-bg flex-1 p-4 md:p-8 !overflow-y-auto";
+    work_area.innerHTML = `
+        <div class="relative z-10">
+            <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <h2 class="text-2xl font-bold text-white">Members</h2>
+                <div class="flex gap-2 flex-wrap">
+                    <button onclick="showAddMemberPanel()" class="quick-btn text-sm px-4 py-2">
+                        <i class="fa-solid fa-user-plus mr-2"></i>Add Member
+                    </button>
+                    <button onclick="showCsvImportPanel()" class="quick-btn secondary text-sm px-4 py-2">
+                        <i class="fa-solid fa-file-csv mr-2"></i>Import CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Add Member Panel (hidden by default) -->
+            <div id="add_member_panel" class="hidden mb-6 p-5 rounded-2xl bg-white/5 border border-white/10">
+                <h3 class="text-white font-semibold mb-4">Add Single Member</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <input id="add_email" type="email" placeholder="Email address" class="field"/>
+                    <select id="add_role" class="field">
+                        <option value="" disabled selected>Select role</option>
+                        <option value="hod">HOD</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="student">Student</option>
+                    </select>
+                    <select id="add_dept" class="field">
+                        <option value="">No department</option>
+                    </select>
+                    <input id="add_batch" type="number" placeholder="Batch year (e.g. 2023)" class="field"/>
+                </div>
+                <p id="add_member_msg" class="text-sm mb-3 hidden"></p>
+                <div class="flex gap-2">
+                    <button onclick="submitAddMember()" class="quick-btn text-sm px-5 py-2">Add</button>
+                    <button onclick="hidePanel('add_member_panel')" class="quick-btn secondary text-sm px-5 py-2">Cancel</button>
+                </div>
+            </div>
+
+            <!-- CSV Import Panel (hidden by default) -->
+            <div id="csv_import_panel" class="hidden mb-6 p-5 rounded-2xl bg-white/5 border border-white/10">
+                <h3 class="text-white font-semibold mb-2">Import Members via CSV</h3>
+                <p class="text-gray-400 text-sm mb-4">
+                    CSV must have headers: <code class="bg-white/10 px-2 py-0.5 rounded text-blue-300">email, role, dept_name, batch</code><br/>
+                    Roles: <code class="bg-white/10 px-2 py-0.5 rounded text-blue-300">hod / faculty / student</code> —
+                    dept_name and batch are optional.
+                </p>
+                <div class="flex gap-3 items-center flex-wrap mb-3">
+                    <input id="csv_file_input" type="file" accept=".csv"
+                           class="text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-full
+                                  file:border-0 file:bg-blue-900/40 file:text-blue-300 hover:file:bg-blue-800/30"/>
+                    <button onclick="submitCsvImport()" class="quick-btn text-sm px-5 py-2">Import</button>
+                    <button onclick="hidePanel('csv_import_panel')" class="quick-btn secondary text-sm px-5 py-2">Cancel</button>
+                </div>
+                <div id="csv_result" class="hidden text-sm space-y-1"></div>
+            </div>
+
+            <!-- Search -->
+            <div class="relative mb-4">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                <input type="text" placeholder="Search by name or email..."
+                       oninput="filterMembers(this.value)"
+                       class="field w-full pl-8"/>
+            </div>
+
+            <!-- Member list -->
+            <div id="member_list" class="space-y-2">
+                <p class="text-gray-400 text-sm">Loading...</p>
+            </div>
+        </div>
+    `;
+
+    await loadDeptOptions('add_dept');
+    await loadMembers();
+}
+
+async function loadMembers() {
+    try {
+        const res  = await adminFetch(`/admin/members?institution_id=${institutionId}`);
+        const data = await res.json();
+        window._allMembers = data;
+        renderMembers(data);
+    } catch(e) {
+        document.getElementById('member_list').innerHTML = `<p class="text-red-400 text-sm">Failed to load members.</p>`;
+    }
+}
+
+function renderMembers(data) {
+    const list = document.getElementById('member_list');
+    if (!data.length) {
+        list.innerHTML = `<p class="text-gray-500 text-sm">No members yet. Add some above.</p>`;
+        return;
+    }
+    list.innerHTML = data.map(m => `
+        <div class="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 gap-3 flex-wrap">
+            <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <p class="text-white font-medium">${m.name || '<span class="text-gray-500 italic">Not signed up yet</span>'}</p>
+                    ${roleBadge(m.role)}
+                    ${statusBadge(m.status)}
+                </div>
+                <p class="text-gray-400 text-xs">${m.email}</p>
+                <p class="text-gray-500 text-xs mt-0.5">
+                    ${m.dept_name ? `Dept: ${m.dept_name}` : 'No dept'}
+                    ${m.batch ? ` · Batch: ${m.batch}` : ''}
+                </p>
+            </div>
+            <div class="flex gap-2 flex-shrink-0">
+                <button onclick="toggleMemberStatus(${m.user_id}, '${m.status}')"
+                    class="text-xs px-3 py-1.5 rounded-xl border transition
+                           ${m.status === 'active'
+                               ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
+                               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'}">
+                    ${m.status === 'active' ? 'Suspend' : 'Activate'}
+                </button>
+                <button onclick="removeMember(${m.user_id}, '${m.email}')"
+                    class="text-xs px-3 py-1.5 rounded-xl bg-red-500/10 text-red-400
+                           border border-red-500/20 hover:bg-red-500/20 transition">
+                    Remove
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterMembers(query) {
+    const q = query.toLowerCase().trim();
+    const filtered = q
+        ? (window._allMembers || []).filter(m =>
+            m.email.toLowerCase().includes(q) ||
+            (m.name || '').toLowerCase().includes(q))
+        : (window._allMembers || []);
+    renderMembers(filtered);
+}
+
+async function loadDeptOptions(selectId) {
+    try {
+        const res  = await adminFetch(`/institutions/${institutionId}/departments`);
+        const data = await res.json();
+        const sel  = document.getElementById(selectId);
+        if (!sel) return;
+        data.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.dept_id;
+            opt.textContent = d.name;
+            sel.appendChild(opt);
+        });
+    } catch(e) { console.error(e); }
+}
+
+function showAddMemberPanel() {
+    document.getElementById('csv_import_panel').classList.add('hidden');
+    document.getElementById('add_member_panel').classList.remove('hidden');
+}
+function showCsvImportPanel() {
+    document.getElementById('add_member_panel').classList.add('hidden');
+    document.getElementById('csv_import_panel').classList.remove('hidden');
+}
+function hidePanel(id) { document.getElementById(id).classList.add('hidden'); }
+
+async function submitAddMember() {
+    const email   = document.getElementById('add_email').value.trim();
+    const role    = document.getElementById('add_role').value;
+    const dept_id = document.getElementById('add_dept').value || null;
+    const batch   = document.getElementById('add_batch').value || null;
+    const msgEl   = document.getElementById('add_member_msg');
+
+    msgEl.classList.add('hidden');
+    if (!email || !role) {
+        msgEl.textContent = 'Email and role are required.';
+        msgEl.className = 'text-red-400 text-sm mb-3';
+        msgEl.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const res  = await adminFetch('/admin/members/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ institution_id: institutionId, email, role, dept_id, batch, admin_id: adminData?.id })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            msgEl.textContent = `<i class="fas fa-check"></i> ${email} added successfully.`;
+            msgEl.className = 'text-emerald-400 text-sm mb-3';
+            msgEl.classList.remove('hidden');
+            document.getElementById('add_email').value = '';
+            document.getElementById('add_role').value = '';
+            document.getElementById('add_batch').value = '';
+            await loadMembers();
+        } else {
+            const msg = data.message === 'email_exists' ? 'This email is already registered.' : data.message;
+            msgEl.textContent = msg;
+            msgEl.className = 'text-red-400 text-sm mb-3';
+            msgEl.classList.remove('hidden');
+        }
+    } catch(e) {
+        msgEl.textContent = 'Connection error.';
+        msgEl.className = 'text-red-400 text-sm mb-3';
+        msgEl.classList.remove('hidden');
+    }
+}
+
+async function submitCsvImport() {
+    const fileInput = document.getElementById('csv_file_input');
+    const resultEl  = document.getElementById('csv_result');
+
+    if (!fileInput.files.length) {
+        alert('Please select a CSV file.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('csv_file', fileInput.files[0]);
+    formData.append('institution_id', institutionId);
+    formData.append('admin_id', adminData?.id || '');
+
+    try {
+        const res  = await adminFetch('/admin/members/import-csv', {
+            method: 'POST',
+            body: formData   // no Content-Type header — browser sets multipart boundary
+        });
+        const data = await res.json();
+
+        resultEl.classList.remove('hidden');
+        let html = `
+            <p class="text-emerald-400 font-semibold">✓ Added: ${data.added} members</p>
+            ${data.skipped ? `<p class="text-amber-400">⚠ Skipped: ${data.skipped}</p>` : ''}
+        `;
+        if (data.errors?.length) {
+            html += `<div class="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                ${data.errors.map(e => `<p class="text-red-400 text-xs">${e}</p>`).join('')}
+            </div>`;
+        }
+        resultEl.innerHTML = html;
+        await loadMembers();
+    } catch(e) {
+        resultEl.classList.remove('hidden');
+        resultEl.innerHTML = `<p class="text-red-400">Import failed. Please try again.</p>`;
+    }
+}
+
+async function toggleMemberStatus(userId, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'pending' : 'active';
+    try {
+        await adminFetch(`/admin/members/${userId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ institution_id: institutionId, status: newStatus, admin_id: adminData?.id })
+        });
+        await loadMembers();
+    } catch(e) { console.error(e); }
+}
+
+async function removeMember(userId, email) {
+    if (!confirm(`Remove ${email}? This cannot be undone.`)) return;
+    try {
+        await adminFetch(`/admin/members/${userId}?institution_id=${institutionId}&admin_id=${adminData?.id}`, { method: 'DELETE' });
+        await loadMembers();
+    } catch(e) { console.error(e); }
+}
+
+// ── DEPARTMENTS ───────────────────────────────────────────────────────────────
+async function goDepartments() {
+    work_area.className = "glass-bg flex-1 p-4 md:p-8 !overflow-y-auto";
+    work_area.innerHTML = `
+        <div class="relative z-10">
+            <h2 class="text-2xl font-bold text-white mb-6">Departments</h2>
+            <div class="flex gap-3 mb-6 flex-wrap">
+                <input id="dept_name_input" type="text" placeholder="Department name e.g. Computer Science"
+                    class="field flex-1 min-w-[200px]"/>
+                <button onclick="addDepartment()" class="quick-btn px-6">
+                    <i class="fa-solid fa-plus mr-2"></i>Add
+                </button>
+            </div>
+            <div id="dept_list" class="space-y-3">
+                <p class="text-gray-400 text-sm">Loading...</p>
+            </div>
+        </div>
+    `;
+    loadDepartments();
+}
+
+async function loadDepartments() {
+    try {
+        const res  = await adminFetch(`/institutions/${institutionId}/departments`);
+        const data = await res.json();
+        const list = document.getElementById('dept_list');
+        if (!data.length) {
+            list.innerHTML = `<p class="text-gray-500 text-sm">No departments yet. Add your first one above.</p>`;
+            return;
+        }
+        list.innerHTML = data.map(d => `
+            <div class="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                <div>
+                    <p class="text-white font-medium">${d.name}</p>
+                    <p class="text-gray-500 text-xs mt-0.5">${d.member_count} member${d.member_count != 1 ? 's' : ''}</p>
+                </div>
+                <button onclick="deleteDepartment(${d.dept_id})"
+                    class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition flex items-center justify-center">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+            </div>
+        `).join('');
+    } catch(e) {
+        document.getElementById('dept_list').innerHTML = `<p class="text-red-400 text-sm">Failed to load departments.</p>`;
+    }
+}
+
+async function addDepartment() {
+    const name = document.getElementById('dept_name_input').value.trim();
+    if (!name) return;
+    try {
+        const res = await adminFetch(`/institutions/${institutionId}/departments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        if (res.ok) {
+            document.getElementById('dept_name_input').value = '';
+            loadDepartments();
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function deleteDepartment(deptId) {
+    if (!confirm('Delete this department? Members in it will have no department assigned.')) return;
+    try {
+        await adminFetch(`/institutions/${institutionId}/departments/${deptId}`, { method: 'DELETE' });
+        loadDepartments();
+    } catch(e) { console.error(e); }
+}
+
+// ── ALL FORMS ─────────────────────────────────────────────────────────────────
+async function goForms() {
+    work_area.className = "glass-bg flex-1 p-4 md:p-8 !overflow-y-auto";
+    work_area.innerHTML = `
+        <div class="relative z-10">
+            <h2 class="text-2xl font-bold text-white mb-6">All Forms</h2>
+            <div id="forms_list" class="space-y-3">
+                <p class="text-gray-400 text-sm">Loading...</p>
+            </div>
+        </div>
+    `;
+    try {
+        const res  = await adminFetch(`/admin/forms?institution_id=${institutionId}`);
+        const data = await res.json();
+        const list = document.getElementById('forms_list');
+        if (!data.length) {
+            list.innerHTML = `<p class="text-gray-500 text-sm">No forms created yet.</p>`;
+            return;
+        }
+        list.innerHTML = data.map(f => `
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="min-w-0 leading-relaxed flex-1">
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <p class="text-white font-semibold">${f.title}</p>
+                            <span class="badge ${f.status === 'open' ? 'badge-active' : 'badge-pending'}">${f.status}</span>
+                            
+                        </div>
+                        <p class="text-gray-400 text-xs mb-1">
+                            Form Code: <span class="text-gray-300 mx-1">${f.form_code}</span>
+                        </p>
+                        <p class="text-gray-400 text-xs">
+                            Created by <span class="text-gray-300">${f.creator_name}</span>
+                            ${roleBadge(f.creator_role)}
+                            <span class="mx-2"> </span>
+                            ${formatDate(f.created_at)}
+                        </p>
+                        <p class="text-gray-500 text-xs mt-0.5">
+                            Access: ${f.access_type}
+                            ${f.target_dept_name ? `· Dept: ${f.target_dept_name}` : ''}
+                            <span class="mx-2"> </span>
+                            Deadline: ${formatDate(f.deadline)}
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto flex-shrink-0 border-t border-white/5 pt-3 sm:border-0 sm:pt-0">
+                        <div class="text-left sm:text-right sm:mr-4">
+                            <p class="text-blue-400 font-bold text-lg leading-none">${f.response_count}</p>
+                            <p class="text-gray-500 text-xs mt-1">responses</p>
+                        </div>
+                        <button onclick="adminDeleteForm(${f.form_id}, '${f.title.replace(/'/g, "\\'")}')"
+                            class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400
+                                   hover:bg-red-500/20 transition flex items-center justify-center flex-shrink-0"
+                            title="Delete form">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        document.getElementById('forms_list').innerHTML = `<p class="text-red-400 text-sm">Failed to load forms.</p>`;
+    }
+}
+
+// ── AUDIT LOGS ────────────────────────────────────────────────────────────────
+async function goAuditLogs() {
+    work_area.className = "glass-bg flex-1 p-4 md:p-8 !overflow-y-auto";
+    work_area.innerHTML = `
+        <div class="relative z-10 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                <h2 class="text-2xl font-bold text-white font-mono">
+                    <i class="fa-solid fa-terminal mr-2 text-blue-400"></i>Audit Terminal
+                </h2>
+                <button onclick="goAuditLogs()" class="text-sm px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 transition text-gray-300">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+                </button>
+            </div>
+            <div class="bg-[#0a0a0a] border border-white/10 rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden shadow-2xl">
+                <!-- Mac-like Terminal Header -->
+                <div class="bg-white/5 border-b border-white/10 px-4 py-2.5 flex items-center gap-2 flex-shrink-0">
+                    <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                    <span class="ml-3 text-xs text-gray-500 font-mono tracking-wider">audit_stream.log</span>
+                </div>
+                <div class="p-2 md:p-4 font-mono text-sm flex-1 overflow-y-auto" id="audit_terminal">
+                    <p class="text-blue-500/50 mb-3 animate-pulse">Connecting to audit stream...</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    try {
+        const res  = await adminFetch(`/admin/audit-logs?institution_id=${institutionId}&limit=100`);
+        const data = await res.json();
+        const terminal = document.getElementById('audit_terminal');
+
+        if (!data.length) {
+            terminal.innerHTML = `<p class="text-gray-500">No audit events yet.</p>`;
+            return;
+        }
+
+        const actionColor = (type) => {
+            if (type.includes('CREATED') || type.includes('ADDED'))    return 'text-blue-400';
+            if (type.includes('SUBMITTED'))                             return 'text-emerald-400';
+            if (type.includes('REMOVED') || type.includes('DELETED'))  return 'text-red-400';
+            if (type.includes('SUSPENDED'))                             return 'text-amber-400';
+            if (type.includes('IMPORT'))                                return 'text-cyan-400';
+            return 'text-gray-300';
+        };
+
+        terminal.innerHTML = data.map(log => `
+            <div class="py-3 border-b border-white/5 hover:bg-white/5 transition px-3 flex flex-col md:flex-row md:items-center gap-1.5 md:gap-4">
+                <!-- Date & User (Line 1 on Mobile) -->
+                <div class="flex items-center justify-between md:justify-start md:gap-4 md:w-[310px] flex-shrink-0">
+                    <span class="text-gray-500 text-[10px] md:text-xs font-mono whitespace-nowrap md:w-[170px] flex-shrink-0">
+                        [${new Date(log.log_time).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' })}]
+                    </span>
+                    <span class="text-amber-300/80 font-semibold text-[11px] md:text-xs md:w-28 truncate flex-shrink-0 text-right md:text-left">
+                        ${log.user_name ? `usr_${log.user_name}` : 'SYSTEM'}
+                    </span>
+                </div>
+                <!-- Action & Target (Line 2 on Mobile) -->
+                <div class="flex items-center gap-2 md:gap-4 flex-1 min-w-0 mt-0.5 md:mt-0">
+                    <span class="${actionColor(log.action_type)} font-bold text-[11px] md:text-xs md:w-44 flex-shrink-0">
+                        ${log.action_type}
+                    </span>
+                    <span class="text-gray-400 italic text-[11px] md:text-xs flex-1 truncate">
+                        <span class="md:hidden text-gray-600"><i class="fa-solid fa-angles-right mr-1"></i> </span>${log.form_title || log.metadata || '—'}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        document.getElementById('audit_terminal').innerHTML = `<p class="text-red-400">Failed to load logs.</p>`;
+    }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// Alias userId and institutionId so newForm.js/myForms.js/fillForm.js work as-is
+const userId = adminData?.id;
+
+goOverview();
+</script>
+
+<!-- Form builder scripts — same as member portal -->
+<script src="newForm.js?v=5" defer></script>
+<script src="myForms.js?v=5" defer></script>
+<script src="fillForm.js?v=5" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+
+<script defer>
+// ── NEW FORM ──────────────────────────────────────────────────────────────────
+// Override goCreateForm from newForm.js to use admin work_area
+function goCreateForm() {
+    window.editingFormId = null;
+    work_area.className = "glass-bg flex-1 !overflow-y-auto p-3 md:p-8 lg:p-12 m-1 md:m-4 lg:m-8";
+    work_area.innerHTML = `<h2 class="relative z-10 text-2xl font-bold text-white mb-4">Loading Templates...</h2>`;
+
+    fetch('/forms/get-templates')
+        .then(r => r.json())
+        .then(templates => {
+            let html = `
+                <div class="relative z-10 mb-8 text-center">
+                    <h2 class="text-3xl font-bold text-white mb-2">Start a New Form</h2>
+                    <p class="text-gray-400 text-sm">Choose a template or start blank.</p>
+                </div>
+                <div class="relative z-10 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
+                    <div onclick="(async()=>await initFormBuilder())()"
+                        class="p-8 rounded-3xl bg-white/5 border-2 border-dashed border-white/20
+                               hover:border-blue-400/50 hover:bg-white/10 cursor-pointer transition
+                               text-center flex flex-col items-center justify-center min-h-[200px] group">
+                        <div class="w-14 h-14 rounded-full bg-blue-900/40 text-blue-400 flex items-center
+                                    justify-center text-2xl mb-4 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-plus"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Blank Form</h3>
+                    </div>
+            `;
+            templates.forEach(t => {
+                html += `
+                    <div onclick="(async()=>await initFormBuilder(${t.template_id}))()"
+                        class="p-6 rounded-3xl bg-gradient-to-br from-blue-900/20 to-blue-950/10
+                               border border-blue-800/30 hover:border-blue-500/50 cursor-pointer
+                               transition text-left relative overflow-hidden group min-h-[200px]
+                               flex flex-col items-start justify-end">
+                        <i class="fa-solid fa-file-lines text-2xl text-blue-400/50 mb-auto"></i>
+                        <h3 class="text-lg font-bold text-blue-300">${t.name}</h3>
+                        <p class="text-gray-400 text-xs mt-1 line-clamp-2">${t.description || ''}</p>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            work_area.innerHTML = html;
+            window.loadedTemplates = templates;
+        })
+        .catch(() => initFormBuilder());
+}
+
+// ── MY FORMS (admin's own forms + responses) ──────────────────────────────────
+function goMyForms() {
+    work_area.className = "glass-bg flex-1 overflow-hidden p-3 md:p-8 m-1 md:m-4 lg:m-8";
+    work_area.innerHTML = `
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 h-full lg:overflow-hidden overflow-y-auto">
+            <div class="lg:col-span-3 overflow-y-auto pr-1 md:pr-3 pl-1 flex flex-col min-h-0">
+                <div class="flex items-center justify-between mb-4 flex-shrink-0 flex-wrap gap-2">
+                    <h2 class="text-xl md:text-2xl font-bold text-blue-400">My Forms</h2>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none"></i>
+                        <input id="form_search" type="text" placeholder="Search forms..."
+                            oninput="filterForms(this.value)"
+                            class="pl-8 pr-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm
+                                   text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 w-44"/>
+                    </div>
+                </div>
+                <div id="forms_list" class="space-y-3 pb-4 flex-1 overflow-y-auto"></div>
+            </div>
+            <div class="lg:col-span-2 overflow-y-auto pr-1 md:pr-3 pl-1">
+                <h2 class="text-xl md:text-2xl font-bold text-blue-400 mb-4 hidden lg:block">&nbsp;</h2>
+                <div id="responses_area" class="text-gray-400">Select a form to view responses</div>
+            </div>
+        </div>
+    `;
+    loadMyForms();
+}
+</script>
+</body>
+</html>

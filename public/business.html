@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <title>FormFlow Business</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'DM Sans', sans-serif; }
+
+        body {
+            background: #080c14;
+            background-image:
+                radial-gradient(ellipse at top left, #0d1828 0%, #080c14 60%),
+                radial-gradient(ellipse at bottom right, #0a1220 0%, transparent 60%);
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(107, 114, 128, 0.6); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.8); }
+        ::-webkit-scrollbar-thumb:active { background: rgba(107, 114, 128, 0.9); }
+        * { scrollbar-color: rgba(107, 114, 128, 0.6) transparent; scrollbar-width: thin; }
+
+        .glass-box {
+            background: rgba(255,255,255,.05);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 2rem;
+            box-shadow: 0 30px 80px rgba(0,0,0,.6);
+            transition: max-width .3s ease;
+            max-width: 448px;
+        }
+        .glass-box.register-wide {
+            max-width: 900px !important;
+        }
+
+        .field {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .field:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+        }
+        .field::placeholder { color: rgba(255,255,255,.3); }
+
+        .btn-primary {
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1e3a5f, #1e40af);
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            transition: .2s ease;
+        }
+        .btn-primary:hover { box-shadow: 0 8px 24px rgba(30,64,175,.35); }
+        .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: .2s;
+            color: #9ca3af;
+            background: transparent;
+            border: none;
+        }
+        .tab-btn.active {
+            background: rgba(30,64,175,.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(30,64,175,.25);
+        }
+
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid transparent;
+            font-size: 13px;
+        }
+        .toast.error { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); color: #fca5a5; }
+        .toast.success { background: rgba(30,64,175,.12); border-color: rgba(30,64,175,.3); color: #93c5fd; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn .3s ease forwards; }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top nav -->
+    <nav class="flex items-center justify-between px-6 md:px-12 py-5">
+        <a href="/business.html" class="flex items-center gap-2">
+            <span class="text-2xl font-bold text-blue-400">FormFlow</span>
+            <span class="text-xs px-2 py-0.5 mt-1 rounded-full bg-blue-900/40 text-blue-300 border border-blue-800/50 font-medium">Business</span>
+        </a>
+        <a href="/signin.html" class="text-sm text-gray-400 hover:text-white transition">
+            Member sign in →
+        </a>
+    </nav>
+
+    <!-- Main content -->
+    <main class="flex-1 flex items-center justify-center px-4 py-12">
+        <div id="main-container" class="w-full max-w-md transition-all duration-300">
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-2xl bg-blue-900/40 border border-blue-800/50
+                            flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-building-columns text-blue-400 text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">FormFlow Business</h1>
+                <p class="text-gray-400 text-sm">Institutional forms platform for universities & colleges</p>
+            </div>
+
+            <!-- Glass card -->
+            <div id="register-signin-box" class="glass-box p-8 mx-auto">
+
+                <!-- Tabs -->
+                <div class="flex gap-2 p-1 rounded-xl bg-white/5 border border-white/10 mb-6">
+                    <button class="tab-btn active" onclick="switchTab('register')" id="tab_register">
+                        <i class="fa-solid fa-plus mr-1.5"></i> Register
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('login')" id="tab_login">
+                        <i class="fa-solid fa-right-to-bracket mr-1.5"></i> Sign In
+                    </button>
+                </div>
+
+                <!-- Toast -->
+                <div id="toast_area"></div>
+
+                <!-- ── REGISTER FORM ── -->
+                <div id="panel_register" class="fade-in">
+                    <p class="text-gray-400 text-sm mb-6 text-center">
+                        Register your institution to get started. You'll be the admin.
+                    </p>
+
+                    <!-- Two column layout -->
+                    <div class="flex flex-col md:flex-row gap-8 md:gap-8">
+                        
+                        <!-- Left: Institution Details -->
+                        <div class="flex-1 space-y-4 w-full flex flex-col justify-center">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold pb-2 border-b border-white/10">
+                                Institution Details
+                            </div>
+                            
+                            <div>
+                                <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">
+                                    Institution / University Name
+                                </label>
+                                <input id="reg_inst_name" type="text"
+                                       placeholder="e.g. MIT Manipal"
+                                       class="field w-full"/>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">
+                                    Domain <span class="text-gray-600 normal-case">(optional)</span>
+                                </label>
+                                <input id="reg_domain" type="text"
+                                       placeholder="e.g. manipal.edu"
+                                       class="field w-full"/>
+                            </div>
+                        </div>
+
+                        <!-- Right: Admin Details -->
+                        <div class="flex-1 space-y-4">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-4 pb-2 border-b border-white/10">
+                                Admin Account
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">
+                                    Your Name
+                                </label>
+                                <input id="reg_name" type="text"
+                                       placeholder="Admin full name"
+                                       class="field"/>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">
+                                    Admin Email
+                                </label>
+                                <input id="reg_email" type="email"
+                                       placeholder="admin@institution.edu"
+                                       class="field"/>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">
+                                    Password <span class="text-gray-600 normal-case">(min 8 chars)</span>
+                                </label>
+                                <input id="reg_password" type="password"
+                                       placeholder="Create a strong password"
+                                       class="field"/>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <button id="reg_btn" onclick="handleRegister()" class="btn-primary mt-6 w-full">
+                        Register Institution
+                    </button>
+
+                    <p class="text-center text-xs text-gray-500 mt-4">
+                        By registering, you become the institution admin and can add members from the dashboard.
+                    </p>
+                </div>
+
+                <!-- ── LOGIN FORM ── -->
+                <div id="panel_login" class="hidden fade-in">
+                    <p class="text-gray-400 text-sm mb-5 text-center">
+                        Sign in to your admin dashboard.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">
+                                Admin Email
+                            </label>
+                            <input id="login_email" type="email"
+                                   placeholder="admin@institution.edu"
+                                   class="field"/>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">
+                                Password
+                            </label>
+                            <input id="login_password" type="password"
+                                   placeholder="Your password"
+                                   class="field"
+                                   onkeydown="if(event.key==='Enter') handleLogin()"/>
+                        </div>
+                    </div>
+
+                    <button id="login_btn" onclick="handleLogin()" class="btn-primary mt-6">
+                        Sign In
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <p class="text-center text-xs text-gray-600 mt-6">
+                Are you a student or faculty?
+                <a href="/signin.html" class="text-blue-400 hover:text-blue-300 transition">Sign in here →</a>
+            </p>
+
+        </div>
+    </main>
+
+</body>
+
+<script>
+// ── Redirect if already logged in as admin ────────────────────────────────────
+const _token = localStorage.getItem("ff_token");
+if (_token) {
+    try {
+        const payload = JSON.parse(atob(_token.split('.')[1]));
+        if (payload.exp * 1000 > Date.now() && payload.role === 'admin') {
+            location.replace("/admin.html");
+        } else {
+            localStorage.removeItem("ff_token");
+            localStorage.removeItem("ff_user");
+        }
+    } catch(e) {
+        localStorage.removeItem("ff_token");
+        localStorage.removeItem("ff_user");
+    }
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    const isRegister = tab === 'register';
+    document.getElementById('panel_register').classList.toggle('hidden', !isRegister);
+    document.getElementById('panel_login').classList.toggle('hidden', isRegister);
+    document.getElementById('tab_register').classList.toggle('active', isRegister);
+    document.getElementById('tab_login').classList.toggle('active', !isRegister);
+    document.getElementById('register-signin-box').classList.toggle('register-wide', isRegister);
+    const mainContainer = document.getElementById('main-container');
+    if (isRegister) {
+        mainContainer.classList.remove('max-w-md');
+        mainContainer.classList.add('max-w-6xl');
+    } else {
+        mainContainer.classList.remove('max-w-6xl');
+        mainContainer.classList.add('max-w-md');
+    }
+    clearToast();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(type, message) {
+    const icon = type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check';
+    document.getElementById('toast_area').innerHTML = `
+        <div class="toast ${type}">
+            <i class="fa-solid ${icon} mt-0.5 flex-shrink-0"></i>
+            <span>${message}</span>
+        </div>
+    `;
+}
+function clearToast() {
+    document.getElementById('toast_area').innerHTML = '';
+}
+
+// ── Set button loading state ──────────────────────────────────────────────────
+function setLoading(btnId, loading, label) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.innerHTML = loading
+        ? `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Please wait...`
+        : label;
+}
+
+// ── Register ──────────────────────────────────────────────────────────────────
+async function handleRegister() {
+    clearToast();
+
+    const institution_name = document.getElementById('reg_inst_name').value.trim();
+    const domain           = document.getElementById('reg_domain').value.trim();
+    const admin_name       = document.getElementById('reg_name').value.trim();
+    const admin_email      = document.getElementById('reg_email').value.trim();
+    const admin_password   = document.getElementById('reg_password').value;
+
+    if (!institution_name || !admin_name || !admin_email || !admin_password) {
+        return showToast('error', 'Please fill in all required fields.');
+    }
+    if (admin_password.length < 8) {
+        return showToast('error', 'Password must be at least 8 characters.');
+    }
+
+    setLoading('reg_btn', true, 'Register Institution');
+
+    try {
+        const res  = await fetch('/institutions/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ institution_name, domain, admin_name, admin_email, admin_password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            localStorage.setItem('ff_token', data.token);
+            localStorage.setItem('ff_user', JSON.stringify(data.user));
+            showToast('success', 'Institution registered! Redirecting...');
+            setTimeout(() => location.replace(data.redirect), 1000);
+        } else {
+            const msg = data.message === 'email_taken'
+                ? 'An account with this email already exists.'
+                : data.message;
+            showToast('error', msg);
+        }
+    } catch (err) {
+        showToast('error', 'Connection error. Please try again.');
+    } finally {
+        setLoading('reg_btn', false, 'Register Institution');
+    }
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function handleLogin() {
+    clearToast();
+
+    const email    = document.getElementById('login_email').value.trim();
+    const password = document.getElementById('login_password').value;
+
+    if (!email || !password) {
+        return showToast('error', 'Please enter your email and password.');
+    }
+
+    setLoading('login_btn', true, 'Sign In');
+
+    try {
+        const res  = await fetch('/institutions/admin-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            localStorage.setItem('ff_token', data.token);
+            localStorage.setItem('ff_user', JSON.stringify(data.user));
+            location.replace(data.redirect);
+        } else {
+            showToast('error', data.message || 'Invalid credentials.');
+        }
+    } catch (err) {
+        showToast('error', 'Connection error. Please try again.');
+    } finally {
+        setLoading('login_btn', false, 'Sign In');
+    }
+}
+
+switchTab('register');
+</script>
+</html>

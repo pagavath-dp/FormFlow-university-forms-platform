@@ -1,16 +1,11 @@
-import oracledb from "oracledb";
+import pg from 'pg';
+const { Pool } = pg;
 
-oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
-oracledb.fetchAsString = [ oracledb.CLOB ];
+const databaseUrl = process.env.DATABASE_URL;
 
-const user = process.env.DB_USER;
-const password = process.env.DB_PASSWORD;
-const connectString = process.env.DB_CONNECT_STRING;
+const pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
-export async function getConnection() {
-    return await oracledb.getConnection({
-        user: user,
-        password: password,
-        connectString: connectString
-    });
-}
+export default pool;

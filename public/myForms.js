@@ -1,10 +1,10 @@
 function goMyForms() {
-    work_area.className = "glass-bg flex-1 overflow-hidden p-8 m-8";
+    work_area.className = "glass-bg flex-1 overflow-hidden p-3 md:p-8 m-1 md:m-4 lg:m-8";
     work_area.innerHTML = `
-        <div class="grid grid-cols-5 gap-6 h-full">
+        <div class="grid grid-cols-1 lg:grid-cols-6 gap-4 lg:gap-6 h-full lg:overflow-hidden overflow-y-auto">
 
             <!-- LEFT: Forms -->
-            <div class="col-span-3 overflow-y-auto pr-3 pl-1 flex flex-col min-h-0">
+            <div class="lg:col-span-3 overflow-y-auto pr-1 md:pr-3 pl-1 flex flex-col min-h-0">
                 <div class="flex items-center justify-between mb-4 flex-shrink-0">
                     <h2 class="text-2xl font-bold text-emerald-400">My Forms</h2>
                     <div class="relative">
@@ -18,7 +18,7 @@ function goMyForms() {
             </div>
 
             <!-- RIGHT: Responses -->
-            <div class="col-span-2 overflow-y-auto pr-3 pl-1">
+            <div class="lg:col-span-3 overflow-y-auto pr-1 md:pr-3 pl-1">
                 <h2 class="text-2xl font-bold text-emerald-400 mb-4">Responses</h2>
                 <div id="responses_area" class="text-gray-400 pb-4">
                     Select a form to view responses
@@ -32,14 +32,40 @@ function goMyForms() {
 }
 
 function copyCode(code) {
-    navigator.clipboard.writeText(code);
-    alert("Form code copied: " + code);
+    // Try modern Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code)
+            .then(() => alert("Form code copied: " + code))
+            .catch(() => fallbackCopy(code));
+    } else {
+        // Fallback for older browsers and mobile
+        fallbackCopy(code);
+    }
+}
+
+function fallbackCopy(code) {
+    // Create temporary input element
+    const input = document.createElement('textarea');
+    input.value = code;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    
+    // Select and copy
+    input.select();
+    try {
+        document.execCommand('copy');
+        alert("Form code copied: " + code);
+    } catch (e) {
+        alert("Copy failed. Form code: " + code);
+    }
+    
+    // Clean up
+    document.body.removeChild(input);
 }
 
 async function loadMyForms() {
-    const params = new URLSearchParams(location.search);
-    const userId = params.get("user_id");
-
+    const userId = JSON.parse(localStorage.getItem("ff_user") || "null")?.id;
     const res = await fetch(`/forms/myforms?user_id=${userId}`);
     const data = await res.json();
 
@@ -62,7 +88,7 @@ async function loadMyForms() {
 function filterForms(query) {
     const all = window.allFormsData || [];
     const q   = query.toLowerCase().trim();
-    const filtered = q ? all.filter(f => f.TITLE.toLowerCase().includes(q)) : all;
+    const filtered = q ? all.filter(f => f.title.toLowerCase().includes(q)) : all;
     const container = document.getElementById("forms_list");
     if (filtered.length === 0) {
         container.innerHTML = `<p class="text-gray-500 text-sm">No forms match "${query}".</p>`;
@@ -86,70 +112,75 @@ async function toggleStatus(formId) {
 
 
 function renderFormCard(f) {
-    const deadline   = new Date(f.DEADLINE);
-    const createDate = new Date(f.CREATED_AT);
+    const deadline   = new Date(f.deadline);
+    const createDate = new Date(f.created_at);
     return `
-        <div onclick="selectForm(${f.FORM_ID})"
+        <div onclick="selectForm(${f.form_id})"
             class="p-4 rounded-xl border cursor-pointer transition
             bg-white/5 border-white/10 hover:bg-white/10">
 
             <!-- HEADER -->
             <div class="flex justify-between items-start mb-2">
                 <div>
-                    <p class="text-white font-semibold">${f.TITLE}</p>
-                    <p class="text-gray-400 text-xs">${f.FORM_CODE}</p>
+                    <p class="text-white font-semibold">${f.title}</p>
+                    <p class="text-gray-400 text-xs">${f.form_code}</p>
                 </div>
                 <span class="text-xs px-2 py-1 rounded-xl ${
-                    f.STATUS === "open"
+                    f.status === "open"
                         ? "bg-green-500/20 text-green-400"
                         : "bg-red-500/20 text-red-400"
                 }">
-                    ${f.STATUS}
+                    ${f.status}
                 </span>
             </div>
 
             <!-- DESCRIPTION -->
             <p class="text-gray-400 text-sm mb-3 line-clamp-2">
-                ${f.DESCRIPTION || "No description"}
+                ${f.description || "No description"}
             </p>
 
             <!-- ACCESS INFO -->
             <p class="text-gray-400 text-sm mb-1">
-                ${f.ACCESS_TYPE === "public" ? "Public Form" : `Department: ${f.TARGET_DEPT}`}
+                ${f.access_type === "public" ? "Public Form" : `${f.access_type} · ${f.target_dept_name || 'All'}`}
             </p>
 
             <!-- Dates -->
-            <p class="text-gray-500 text-xs mb-1">Created: ${createDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-            <p class="text-gray-500 text-xs mb-3">Deadline: ${deadline.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+            <p class="text-gray-500 text-xs mb-1">Created: ${createDate.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+            <p class="text-gray-500 text-xs mb-3">Deadline: ${deadline.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
 
             <!-- ACTIONS -->
             <div class="flex gap-2 flex-wrap">
 
-                <button onclick="event.stopPropagation(); copyCode('${f.FORM_CODE}')" class="text-xs px-3 py-1 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30">
+                <button onclick="event.stopPropagation(); copyCode('${f.form_code}');" class="text-xs px-3 py-1 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30">
                     Copy Code
                 </button>
 
-                <button onclick="event.stopPropagation(); toggleStatus(${f.FORM_ID})" class="text-xs px-3 py-1 rounded-xl
-                    ${f.STATUS === "open" ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" : "bg-green-500/20 text-green-400 hover:bg-green-500/30"}">
-                    ${f.STATUS === "open" ? "Close Form" : "Open Form"}
+                <button onclick="event.stopPropagation(); toggleStatus(${f.form_id})" class="text-xs px-3 py-1 rounded-xl
+                    ${f.status === "open" ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30" : "bg-green-500/20 text-green-400 hover:bg-green-500/30"}">
+                    ${f.status === "open" ? "Close Form" : "Open Form"}
                 </button>
 
-                <button onclick="event.stopPropagation(); generateReport(${f.FORM_ID})"
+                <button onclick="event.stopPropagation(); generateReport(${f.form_id})"
                     class="text-xs px-3 py-1 rounded-xl bg-purple-500/20 text-purple-400 hover:bg-purple-500/30">
                     Report
                 </button>
 
-                <button onclick="event.stopPropagation(); toggleReport(${f.FORM_ID})"
-                    class="text-xs px-3 py-1 rounded-xl bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30">
-                    ${f.REPORT_RELEASED === "yes" ? "Hide Report" : "Release Report"}
+                <button onclick="event.stopPropagation(); aiAnalyze(${f.form_id})"
+                    class="text-xs px-3 py-1 rounded-xl bg-violet-500/20 text-violet-400 hover:bg-violet-500/30">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>AI Insights
                 </button>
 
-                <button onclick="event.stopPropagation(); editForm(${f.FORM_ID})"
+                <button onclick="event.stopPropagation(); toggleReport(${f.form_id})"
+                    class="text-xs px-3 py-1 rounded-xl bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30">
+                    ${f.report_released === "yes" ? "Hide Report" : "Release Report"}
+                </button>
+
+                <button onclick="event.stopPropagation(); editForm(${f.form_id})"
                     class="text-xs px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30">
                     <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
                 </button>
 
-                <button onclick="event.stopPropagation(); deleteForm(${f.FORM_ID})"
+                <button onclick="event.stopPropagation(); deleteForm(${f.form_id})"
                     class="text-xs px-3 py-1 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30">
                     <i class="fa-solid fa-trash mr-1"></i>Delete
                 </button>
@@ -198,7 +229,7 @@ function renderReport(data, containerId = "responses_area") {
 
     let html = `<div class="space-y-4">`;
 
-    const totalResponses = new Set(answers.map(a => a.RESPONSE_ID)).size;
+    const totalResponses = new Set(answers.map(a => a.response_id)).size;
 
     window.currentReportData = data;
 
@@ -218,8 +249,8 @@ function renderReport(data, containerId = "responses_area") {
         const responseDept = {};
 
         answers.forEach(a => {
-            if (!responseDept[a.RESPONSE_ID]) {
-                responseDept[a.RESPONSE_ID] = a.DEPARTMENT || "Unknown";
+            if (!responseDept[a.response_id]) {
+                responseDept[a.response_id] = a.department || "Unknown";
             }
         });
 
@@ -255,39 +286,39 @@ function renderReport(data, containerId = "responses_area") {
 
         html += `
             <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                <p class="text-white font-semibold mb-2">${q.QUESTION_TEXT}</p>
+                <p class="text-white font-semibold mb-2">${q.question_text}</p>
         `;
 
-        if (q.QUESTION_TYPE === "mcq") {
+        if (q.question_type === "mcq") {
 
             const counts = {};
 
             options
-                .filter(o => o.QUESTION_ID === q.QUESTION_ID)
-                .forEach(o => counts[o.OPTION_TEXT] = 0);
+                .filter(o => o.question_id === q.question_id)
+                .forEach(o => counts[o.option_text] = 0);
 
             answers
-                .filter(a => a.QUESTION_ID === q.QUESTION_ID)
+                .filter(a => a.question_id === q.question_id)
                 .forEach(a => {
-                    const opt = options.find(o => o.OPTION_ID === a.SELECTED_OPTION_ID);
-                    if (opt) counts[opt.OPTION_TEXT]++;
+                    const opt = options.find(o => o.option_id === a.selected_option_id);
+                    if (opt) counts[opt.option_text]++;
                 });
 
             // Store chart data globally dynamically so we can render them after DOM updates
             if (!window.chartDataMap) window.chartDataMap = {};
-            window.chartDataMap[`chart_${q.QUESTION_ID}`] = counts;
+            window.chartDataMap[`chart_${q.question_id}`] = counts;
 
             html += `
                 <div class="h-48 w-full mt-4 flex justify-center">
-                    <canvas id="chart_${q.QUESTION_ID}"></canvas>
+                    <canvas id="chart_${q.question_id}"></canvas>
                 </div>
             `;
 
-        } else if (q.QUESTION_TYPE === "number") {
+        } else if (q.question_type === "number") {
 
             const nums = answers
-                .filter(a => a.QUESTION_ID === q.QUESTION_ID && a.ANSWER_NUMBER !== null)
-                .map(a => a.ANSWER_NUMBER);
+                .filter(a => a.question_id === q.question_id && a.answer_number !== null)
+                .map(a => a.answer_number);
 
             if (nums.length > 0) {
                 const avg = (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
@@ -360,22 +391,22 @@ function renderResponsesSide(data) {
     window._currentResponses = { responses, answers, questions };
 
     const qMap = {};
-    questions.forEach(q => { qMap[q.QUESTION_ID] = q.QUESTION_TEXT; });
+    questions.forEach(q => { qMap[q.question_id] = q.question_text; });
 
     function buildResponsesHTML(list) {
         return list.map(r => {
-            const ans         = answers.filter(a => a.RESPONSE_ID === r.RESPONSE_ID);
-            const submittedAt = new Date(r.SUBMITTED_AT);
+            const ans         = answers.filter(a => a.response_id === r.response_id);
+            const submittedAt = new Date(r.submitted_at);
             return `
                 <div class="p-4 rounded-xl bg-white/5 border border-white/10">
                     <div class="flex justify-between items-center text-emerald-400 font-semibold mb-2">
-                        <span>${r.NAME}</span>
-                        <span class="text-xs font-normal text-gray-500">${submittedAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>${r.name}</span>
+                        <span class="text-xs font-normal text-gray-500">${submittedAt.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                     </div>
                     ${ans.map(a => `
                         <div class="mb-2">
-                            <p class="text-gray-400 text-xs mb-0.5">${qMap[a.QUESTION_ID] || ''}</p>
-                            <p class="text-white text-sm">${a.ANSWER_TEXT ?? a.ANSWER_NUMBER ?? a.OPTION_TEXT ?? '-'}</p>
+                            <p class="text-gray-400 text-xs mb-0.5">${qMap[a.question_id] || ''}</p>
+                            <p class="text-white text-sm">${a.answer_text ?? a.answer_number ?? a.option_text ?? '-'}</p>
                         </div>
                     `).join('')}
                 </div>
@@ -398,10 +429,10 @@ function filterResponses(query) {
     if (!window._currentResponses) return;
     const { responses, answers, questions } = window._currentResponses;
     const q = query.toLowerCase().trim();
-    const filtered = q ? responses.filter(r => r.NAME.toLowerCase().includes(q)) : responses;
+    const filtered = q ? responses.filter(r => r.name.toLowerCase().includes(q)) : responses;
 
     const qMap = {};
-    questions.forEach(q => { qMap[q.QUESTION_ID] = q.QUESTION_TEXT; });
+    questions.forEach(q => { qMap[q.question_id] = q.question_text; });
 
     const list = document.getElementById('resp_list');
     if (!list) return;
@@ -410,18 +441,18 @@ function filterResponses(query) {
         return;
     }
     list.innerHTML = filtered.map(r => {
-        const ans         = answers.filter(a => a.RESPONSE_ID === r.RESPONSE_ID);
-        const submittedAt = new Date(r.SUBMITTED_AT);
+        const ans         = answers.filter(a => a.response_id === r.response_id);
+        const submittedAt = new Date(r.submitted_at);
         return `
             <div class="p-4 rounded-xl bg-white/5 border border-white/10">
                 <div class="flex justify-between items-center text-emerald-400 font-semibold mb-2">
-                    <span>${r.NAME}</span>
-                    <span class="text-xs font-normal text-gray-500">${submittedAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>${r.name}</span>
+                    <span class="text-xs font-normal text-gray-500">${submittedAt.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                 </div>
                 ${ans.map(a => `
                     <div class="mb-2">
-                        <p class="text-gray-400 text-xs mb-0.5">${qMap[a.QUESTION_ID] || ''}</p>
-                        <p class="text-white text-sm">${a.ANSWER_TEXT ?? a.ANSWER_NUMBER ?? a.OPTION_TEXT ?? '-'}</p>
+                        <p class="text-gray-400 text-xs mb-0.5">${qMap[a.question_id] || ''}</p>
+                        <p class="text-white text-sm">${a.answer_text ?? a.answer_number ?? a.option_text ?? '-'}</p>
                     </div>
                 `).join('')}
             </div>
@@ -440,37 +471,37 @@ function exportCurrentReportToCSV() {
     // First setup the base dictionary from responses array if it exists (for individual responses tab)
     if (responses) {
         responses.forEach(r => {
-            responsesMap[r.RESPONSE_ID] = {
-                ResponseID: r.RESPONSE_ID,
-                RespondentName: r.NAME || "Unknown",
-                SubmittedDate: new Date(r.SUBMITTED_AT).toLocaleString()
+            responsesMap[r.response_id] = {
+                ResponseID: r.response_id,
+                RespondentName: r.name || "Unknown",
+                SubmittedDate: new Date(r.submitted_at).toLocaleString()
             };
         });
     }
 
     answers.forEach(a => {
-        if (!responsesMap[a.RESPONSE_ID]) {
-            responsesMap[a.RESPONSE_ID] = {
-                ResponseID: a.RESPONSE_ID,
+        if (!responsesMap[a.response_id]) {
+            responsesMap[a.response_id] = {
+                ResponseID: a.response_id,
                 RespondentName: "Anonymous",
                 SubmittedDate: "Unknown"
             };
         }
         
         // Also capture department if it's there
-        if (a.DEPARTMENT) {
-            responsesMap[a.RESPONSE_ID].UserDept = a.DEPARTMENT;
+        if (a.department) {
+            responsesMap[a.response_id].UserDept = a.department;
         }
         
-        let val = a.ANSWER_TEXT ?? a.ANSWER_NUMBER ?? a.OPTION_TEXT ?? "";
-        if (a.SELECTED_OPTION_ID && !a.OPTION_TEXT && options) {
-            const opt = options.find(o => o.OPTION_ID === a.SELECTED_OPTION_ID);
-            if (opt) val = opt.OPTION_TEXT;
+        let val = a.answer_text ?? a.answer_number ?? a.option_text ?? "";
+        if (a.selected_option_id && !a.option_text && options) {
+            const opt = options.find(o => o.option_id === a.selected_option_id);
+            if (opt) val = opt.option_text;
         }
 
-        const qIdx = questions.findIndex(q => q.QUESTION_ID === a.QUESTION_ID);
+        const qIdx = questions.findIndex(q => q.question_id === a.question_id);
         if (qIdx !== -1) {
-            responsesMap[a.RESPONSE_ID][`Q${qIdx + 1}`] = val;
+            responsesMap[a.response_id][`Q${qIdx + 1}`] = val;
         }
     });
 
@@ -484,7 +515,7 @@ function exportCurrentReportToCSV() {
     }
 
     questions.forEach((q, i) => {
-        const header = q.QUESTION_TEXT.replace(/"/g, '""');
+        const header = q.question_text.replace(/"/g, '""');
         csvStr += `,"${header}"`;
     });
     csvStr += "\n";
@@ -518,9 +549,7 @@ function exportCurrentReportToCSV() {
 
 // ── Edit form ─────────────────────────────────────────────────────────────────
 async function editForm(formId) {
-    const params = new URLSearchParams(location.search);
-    const userId = params.get("user_id");
-
+    const userId = JSON.parse(localStorage.getItem("ff_user") || "null")?.id;
     const res  = await fetch(`/forms/${formId}/edit?user_id=${userId}`);
     const data = await res.json();
 
@@ -536,8 +565,8 @@ async function editForm(formId) {
 
 // ── Delete form ───────────────────────────────────────────────────────────────
 function deleteForm(formId) {
-    const form      = window.allFormsData?.find(f => f.FORM_ID === formId);
-    const formTitle = form?.TITLE || 'this form';
+    const form      = window.allFormsData?.find(f => f.form_id === formId);
+    const formTitle = form?.title || 'this form';
     // Remove existing modal if any
     const existing = document.getElementById('delete_modal');
     if (existing) existing.remove();
@@ -550,7 +579,7 @@ function deleteForm(formId) {
              onclick="document.getElementById('delete_modal').remove()"></div>
 
         <div id="delete_modal_card"
-             class="relative z-10 w-[380px] bg-gray-900/90 border border-white/10 rounded-2xl p-8
+             class="relative z-10 w-full max-w-[380px] mx-4 bg-gray-900/90 border border-white/10 rounded-2xl p-8
                     shadow-[0_30px_80px_rgba(0,0,0,.7)] text-center
                     scale-95 opacity-0 transition-all duration-200 ease-out">
 
@@ -590,9 +619,7 @@ function deleteForm(formId) {
 }
 
 async function confirmDeleteForm(formId) {
-    const params = new URLSearchParams(location.search);
-    const userId = params.get("user_id");
-
+    const userId = JSON.parse(localStorage.getItem("ff_user") || "null")?.id;
     const res  = await fetch(`/forms/${formId}?user_id=${userId}`, { method: 'DELETE' });
     const data = await res.json();
 
@@ -605,7 +632,7 @@ async function confirmDeleteForm(formId) {
 
     // Remove from cached data
     if (window.allFormsData) {
-        window.allFormsData = window.allFormsData.filter(f => f.FORM_ID !== formId);
+        window.allFormsData = window.allFormsData.filter(f => f.form_id !== formId);
     }
 
     // Fade out and remove card from DOM
@@ -622,4 +649,104 @@ async function confirmDeleteForm(formId) {
     // Clear responses panel
     const ra = document.getElementById('responses_area');
     if (ra) ra.innerHTML = `<p class="text-gray-500">Form deleted.</p>`;
+}
+
+// ── AI Response Analytics ─────────────────────────────────────────────────────
+async function aiAnalyze(formId) {
+    const area = document.getElementById('responses_area');
+    if (!area) return;
+
+    area.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+            <div class="w-16 h-16 rounded-full bg-violet-500/20 flex items-center justify-center mb-4 animate-pulse">
+                <i class="fa-solid fa-wand-magic-sparkles text-violet-400 text-2xl"></i>
+            </div>
+            <p class="text-violet-400 font-semibold mb-1">Analyzing responses...</p>
+            <p class="text-gray-500 text-sm">Gemini AI is reading through the data</p>
+        </div>
+    `;
+
+    try {
+        const userId = JSON.parse(localStorage.getItem("ff_user") || "null")?.id;
+        const res    = await fetch(`/ai/analyze/${formId}`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ user_id: userId })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            area.innerHTML = `
+                <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    <i class="fa-solid fa-circle-exclamation mr-2"></i>${data.message}
+                </div>`;
+            return;
+        }
+
+        const { overview, keyFindings, patterns, recommendations } = data.insights;
+
+        const formatted = `
+            <div class="mb-4">
+                <p class="text-gray-300 text-sm leading-relaxed">${overview}</p>
+            </div>
+            
+            <!-- Key Findings -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-4">
+                <h4 class="text-violet-400 font-semibold mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> Key Findings
+                </h4>
+                <ul class="space-y-2">
+                    ${(keyFindings || []).map(f => `<li class="text-gray-300 text-sm flex items-start gap-2"><i class="fa-solid fa-angle-right text-violet-500/50 mt-1 flex-shrink-0"></i> <span>${f}</span></li>`).join('')}
+                </ul>
+            </div>
+
+            <!-- Notable Patterns -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-4 mt-4">
+                <h4 class="text-emerald-400 font-semibold mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-microscope"></i> Notable Patterns
+                </h4>
+                <ul class="space-y-2">
+                    ${(patterns || []).map(p => `<li class="text-gray-300 text-sm flex items-start gap-2"><i class="fa-solid fa-angle-right text-emerald-500/50 mt-1 flex-shrink-0"></i> <span>${p}</span></li>`).join('')}
+                </ul>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-4 mt-4">
+                <h4 class="text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb"></i> Recommendations
+                </h4>
+                <ul class="space-y-2">
+                    ${(recommendations || []).map(r => `<li class="text-gray-300 text-sm flex items-start gap-2"><i class="fa-solid fa-angle-right text-blue-500/50 mt-1 flex-shrink-0"></i> <span>${r}</span></li>`).join('')}
+                </ul>
+            </div>
+        `;
+
+        area.innerHTML = `
+            <div class="space-y-3">
+                <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-violet-400"></i>
+                        <span class="text-violet-400 font-semibold text-sm">AI Insights</span>
+                        <span class="text-gray-500 text-xs">${data.total_responses} response${data.total_responses !== 1 ? 's' : ''} analyzed</span>
+                    </div>
+                    <button onclick="aiAnalyze(${formId})"
+                        class="text-xs px-3 py-1 rounded-xl bg-white/5 border border-white/10
+                               text-gray-400 hover:text-white hover:bg-white/10 transition">
+                        <i class="fa-solid fa-rotate-right mr-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="p-5 rounded-xl bg-violet-500/5 border border-violet-500/20 shadow-lg">
+                    ${formatted}
+                </div>
+                <p class="text-gray-600 text-xs text-center">
+                    <i class="fa-solid fa-circle-info mr-1"></i>AI-generated insights may not be 100% accurate. Always verify with raw data.
+                </p>
+            </div>
+        `;
+    } catch(e) {
+        area.innerHTML = `
+            <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <i class="fa-solid fa-circle-exclamation mr-2"></i>Failed to connect. Please try again.
+            </div>`;
+    }
 }

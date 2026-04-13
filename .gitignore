@@ -1,9 +1,52 @@
+# --- Environment & Secrets ---
 .env
-node_modules
-tmp_db_update.js
-.DS_Store
-*.log
-dist/
-build/
 .env.local
 .env.*.local
+# Specifically for Node 20+ --env-file usage
+.env.development
+.env.production
+
+# --- Dependencies ---
+node_modules/
+jspm_packages/
+
+# --- Build & Distribution ---
+dist/
+build/
+out/
+.next/
+
+# --- Database & Scripts ---
+# We keep project_db.sql (schema), but ignore data dumps
+*.dump
+*.sql_dump
+backup.sql
+# Your temporary migration script from the screenshot
+tmp_db_update.js
+
+# --- User Uploads (Multer/CSV Parse) ---
+# Crucial: Ignore folders where student/member CSVs are stored
+uploads/
+temp/
+tmp/
+*.csv
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# --- System Files ---
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# --- IDE Settings ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

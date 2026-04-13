@@ -1,21 +1,28 @@
 {
-  "name": "gforms-replica",
+  "name": "formflow",
   "version": "1.0.0",
-  "description": "",
+  "description": "A comprehensive, AI-integrated institutional form management system featuring RBAC, departmental scoping, and Gemini-powered response insights.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --env-file=.env server.js",
-    "dev": "node --watch --watch-path . --env-file=.env server.js"
+    "dev": "node --watch --env-file=.env server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Pagavath D P",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
+    "csv-parse": "^6.2.1",
+    "dotenv": "^17.4.1",
     "express": "^5.2.1",
-    "oracledb": "^6.10.0"
+    "express-rate-limit": "^8.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "pg": "^8.20.0"
   }
 }

@@ -13,32 +13,78 @@
 
 <div class="fixed inset-0" id="bg_overlay"></div>
 
-<div class="relative h-screen flex">
+<!-- Mobile sidebar overlay -->
+<div id="sidebar_overlay"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden lg:hidden"
+     onclick="closeSidebar()"></div>
 
-    <!-- Sidebar -->
-    <aside class="w-96 p-7 backdrop-blur-xl bg-white/5 border-r border-white/10 flex flex-col flex-shrink-0">
-        <h2 class="text-2xl font-bold text-emerald-400 mb-10 cursor-pointer"
+<div class="relative h-screen flex flex-col lg:flex-row">
+
+    <!-- ── Mobile Top Header ───────────────────────────────────── -->
+    <header class="lg:hidden flex items-center justify-between px-4 py-3
+                   border-b border-white/10 bg-black/30 backdrop-blur-xl
+                   flex-shrink-0 z-30 relative">
+        <h2 class="text-xl font-bold text-emerald-400 cursor-pointer"
+            onclick="loadUser()">FormFlow</h2>
+        <button onclick="toggleSidebar()"
+                class="w-10 h-10 rounded-xl bg-white/5 border border-white/10
+                       flex items-center justify-center text-gray-300 hover:text-white transition">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </header>
+
+    <!-- ── Sidebar ─────────────────────────────────────────────── -->
+    <aside id="sidebar"
+           class="fixed lg:relative inset-y-0 left-0 z-50 w-72 lg:w-80 p-5 lg:p-7
+                  backdrop-blur-xl bg-gray-950/95 lg:bg-white/5
+                  border-r border-white/10
+                  flex flex-col flex-shrink-0
+                  -translate-x-full lg:translate-x-0
+                  transition-transform duration-300 ease-in-out
+                  h-full overflow-y-auto">
+
+        <!-- Close button (mobile only) -->
+        <div class="lg:hidden flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-emerald-400">FormFlow</h2>
+            <button onclick="closeSidebar()"
+                    class="w-8 h-8 rounded-lg bg-white/5 flex items-center
+                           justify-center text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Logo (desktop only) -->
+        <h2 class="hidden lg:block text-2xl font-bold text-emerald-400 mb-10 cursor-pointer"
             onclick="setActive(this); loadUser()">FormFlow</h2>
-        <nav class="space-y-4">
-            <button onclick="setActive(this); goCreateForm()" class="nav-btn">
+
+        <nav class="space-y-3 lg:space-y-4">
+            <button onclick="setActive(this); goCreateForm(); closeSidebar()" class="nav-btn">
                 <i class="fa-solid fa-plus"></i> New Form
             </button>
-            <button onclick="setActive(this); goMyForms()" class="nav-btn">
+            <button onclick="setActive(this); goMyForms(); closeSidebar()" class="nav-btn">
                 <i class="fa-solid fa-file"></i> My Forms
             </button>
-            <button onclick="setActive(this); goMyResponses()" class="nav-btn">
+            <button onclick="setActive(this); goMyResponses(); closeSidebar()" class="nav-btn">
                 <i class="fa-solid fa-chart-bar"></i> My Responses
             </button>
-            <button onclick="setActive(this); goFillForm()" class="nav-btn">
+            <button onclick="setActive(this); goFeed(); closeSidebar()" class="nav-btn">
+                <i class="fa-solid fa-layer-group"></i> Form Feed
+            </button>
+            <button onclick="setActive(this); goFillForm(); closeSidebar()" class="nav-btn">
                 <i class="fa-solid fa-pen-to-square"></i> Fill Form
             </button>
-            <button id="nav_audit_btn" onclick="setActive(this); goAuditLogs()" class="nav-btn mt-12 border border-dashed border-white/20 hidden">
+            <hr class="border-white/10 my-2"/>
+            <button id="nav_audit_btn" onclick="setActive(this); goAuditLogs(); closeSidebar()"
+                    class="nav-btn mt-8 lg:mt-12 border border-dashed border-white/20 hidden">
                 <i class="fa-solid fa-terminal"></i> Audit Logs
+            </button>
+            <button id="nav_dept_forms_btn" onclick="setActive(this); goDeptForms(); closeSidebar()"
+                    class="nav-btn border border-dashed border-white/20 hidden">
+                <i class="fa-solid fa-layer-group"></i> Dept Forms
             </button>
         </nav>
 
-        <div class="mt-auto">
-
+        <div class="mt-auto pt-6">
             <!-- Theme Picker Dropdown -->
             <div class="relative mb-4" id="theme_picker_wrap">
                 <div id="theme_panel"></div>
@@ -50,21 +96,31 @@
             </div>
 
             <!-- User + Logout -->
-            <div class="border-t border-white/10 pt-5 flex items-center justify-between">
+            <div class="border-t border-white/10 pt-4 lg:pt-5 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                    <div class="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-emerald-500/20
+                                text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
                         <i class="fa-solid fa-user"></i>
                     </div>
-                    <div>
-                        <p class="text-sm font-semibold text-white truncate max-w-[120px]" id="sidebar_user_name">Loading...</p>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-white truncate max-w-[110px] lg:max-w-[120px]"
+                           id="sidebar_user_name">Loading...</p>
                         <p class="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">FormFlow v1.0</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-1">
-                    <button onclick="openChangePassword()" class="w-10 h-10 rounded-full hover:bg-white/5 text-gray-400 hover:text-emerald-400 transition flex items-center justify-center group" title="Change Password">
+                    <button onclick="openChangePassword()"
+                            class="w-9 h-9 lg:w-10 lg:h-10 rounded-full hover:bg-white/5
+                                   text-gray-400 hover:text-emerald-400 transition
+                                   flex items-center justify-center group"
+                            title="Change Password">
                         <i class="fa-solid fa-key group-hover:scale-110 transition-transform"></i>
                     </button>
-                    <button onclick="confirmLogout()" class="w-10 h-10 rounded-full hover:bg-white/5 text-gray-400 hover:text-red-400 transition flex items-center justify-center group" title="Sign Out">
+                    <button onclick="confirmLogout()"
+                            class="w-9 h-9 lg:w-10 lg:h-10 rounded-full hover:bg-white/5
+                                   text-gray-400 hover:text-red-400 transition
+                                   flex items-center justify-center group"
+                            title="Sign Out">
                         <i class="fa-solid fa-power-off group-hover:scale-110 transition-transform"></i>
                     </button>
                 </div>
@@ -72,10 +128,37 @@
         </div>
     </aside>
 
-    <!-- More margin (p-10) to expose dark bg around glass -->
-    <main class="flex-1 p-8 overflow-y-auto flex flex-col" id="work_area_outer">
-        <div id="work_area" class="glass-bg flex-1 p-10"></div>
+    <!-- ── Main Content ─────────────────────────────────────────── -->
+    <main class="flex-1 p-2 md:p-4 lg:p-8 overflow-y-auto flex flex-col
+                 pb-20 lg:pb-8" id="work_area_outer">
+        <div id="work_area" class="glass-bg flex-1 p-4 md:p-8 lg:p-10"></div>
     </main>
+
+    <!-- ── Mobile Bottom Nav ────────────────────────────────────── -->
+    <!-- <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30
+                bg-gray-950/95 backdrop-blur-xl border-t border-white/10
+                flex items-stretch">
+        <button onclick="loadUser()" class="mob-nav-btn">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </button>
+        <button onclick="goCreateForm()" class="mob-nav-btn">
+            <i class="fa-solid fa-plus"></i>
+            <span>New</span>
+        </button>
+        <button onclick="goMyForms()" class="mob-nav-btn">
+            <i class="fa-solid fa-file"></i>
+            <span>Forms</span>
+        </button>
+        <button onclick="goMyResponses()" class="mob-nav-btn">
+            <i class="fa-solid fa-chart-bar"></i>
+            <span>Responses</span>
+        </button>
+        <button onclick="goFillForm()" class="mob-nav-btn">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Fill</span>
+        </button>
+    </nav> -->
 
 </div>
 
@@ -83,7 +166,7 @@
 
 .nav-btn {
     width: 100%;
-    padding: 1rem;
+    padding: .85rem 1rem;
     border-radius: 1rem;
     background: rgba(255,255,255,.06);
     display: flex;
@@ -96,9 +179,26 @@
 .nav-btn.hidden { display: none !important; }
 .nav-btn i { width: 1.1rem; text-align: center; flex-shrink: 0; }
 
+/* Mobile bottom nav buttons
+.mob-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 4px 8px;
+    color: #6b7280;
+    font-size: 10px;
+    transition: color .2s;
+    cursor: pointer;
+}
+.mob-nav-btn i { font-size: 18px; }
+.mob-nav-btn:hover, .mob-nav-btn.active { color: #34d399; } */
+
 .quick-btn {
     background: linear-gradient(135deg, #10b981, #059669);
-    padding: .85rem 2rem;
+    padding: .75rem 1.5rem;
     border-radius: 9999px;
     font-weight: 600;
     cursor: pointer;
@@ -106,7 +206,7 @@
     color: #fff;
     transition: .2s ease;
 }
-.quick-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16,185,129,.4); }
+.quick-btn:hover { box-shadow: 0 8px 24px rgba(16,185,129,.4); }
 .quick-btn.secondary {
     background: transparent;
     border: 1.5px solid #34d399;
@@ -114,21 +214,23 @@
 }
 .quick-btn.secondary:hover { background: rgba(16,185,129,.1); box-shadow: none; }
 
-/* The glass background card */
 .glass-bg {
     position: relative;
     background: rgba(255,255,255,.05);
     backdrop-filter: blur(18px);
-    border-radius: 2rem;
+    border-radius: 1.25rem;
     border: 1px solid rgba(255,255,255,.1);
     box-shadow: 0 30px 80px rgba(0,0,0,.6);
     overflow: hidden;
+}
+@media (min-width: 768px) {
+    .glass-bg { border-radius: 2rem; }
 }
 .glass-bg::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(rgba(255,255,255,.12) 1.2px, transparent 1.2px);
+    /* background-image: radial-gradient(rgba(255,255,255,.12) 1.2px, transparent 1.2px); */
     background-size: 22px 22px;
     opacity: .4;
     pointer-events: none;
@@ -137,31 +239,39 @@
     content: "";
     position: absolute;
     inset: 0;
-    background:
-        radial-gradient(circle at 20% 30%, rgba(16,185,129,.15), transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(6,182,212,.12), transparent 40%);
     pointer-events: none;
 }
 
-/* Compact inner card for fill form / centered content */
+#work_area {
+    background:
+        radial-gradient(circle at 20% 30%, rgba(16,185,129,.15), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(6,182,212,.12), transparent 40%);
+}
+
 .content-card {
     position: relative;
     z-index: 10;
     background: rgba(255,255,255,.06);
     border: 1px solid rgba(255,255,255,.12);
-    border-radius: 1.5rem;
-    padding: 2.5rem;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
     width: 100%;
     max-width: 750px;
+}
+@media (min-width: 768px) {
+    .content-card { border-radius: 1.5rem; padding: 2.5rem; }
 }
 
 .stat-card {
     background: rgba(255,255,255,.05);
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 1.25rem;
-    padding: 1.5rem;
+    padding: 1rem;
     flex: 1;
     transition: border-color .2s, transform .2s;
+}
+@media (min-width: 768px) {
+    .stat-card { padding: 1.5rem; }
 }
 .stat-card:hover { border-color: rgba(52,211,153,.3); transform: translateY(-2px); }
 
@@ -171,15 +281,12 @@ input[type="datetime-local"] {
     color-scheme: dark;
 }
 
-
-/* ── Drag & drop ── */
 [draggable="true"] { cursor: grab; }
 [draggable="true"]:active { cursor: grabbing; }
 .drag-ghost { opacity: .35; transform: scale(.98); transition: none; }
 .drag-over-top    { box-shadow: 0 -3px 0 0 rgba(16,185,129,.7) !important; }
 .drag-over-bottom { box-shadow: 0  3px 0 0 rgba(16,185,129,.7) !important; }
 
-/* ── Theme Dropdown ── */
 #theme_dropdown_btn {
     width: 100%;
     display: flex;
@@ -231,64 +338,69 @@ input[type="datetime-local"] {
 }
 .theme-row:hover { background: rgba(255,255,255,.07); }
 .theme-row.active { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.12); }
-.theme-row .t-swatch {
-    width: 28px; height: 28px;
-    border-radius: .4rem;
-    flex-shrink: 0;
-    border: 1px solid rgba(255,255,255,.15);
-}
+.theme-row .t-swatch { width: 28px; height: 28px; border-radius: .4rem; flex-shrink: 0; border: 1px solid rgba(255,255,255,.15); }
 .theme-row .t-label { flex: 1; font-size: .82rem; color: #e5e7eb; }
 .theme-row .t-check { color: #34d399; font-size: .7rem; opacity: 0; }
 .theme-row.active .t-check { opacity: 1; }
 
+/* ── Custom Scrollbars ────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(107, 114, 128, 0.4);
+    border-radius: 4px;
+    border: 2px solid rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.6);
+}
+::-webkit-scrollbar-thumb:active {
+    background: rgba(107, 114, 128, 0.8);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 114, 128, 0.4) rgba(255, 255, 255, 0.02);
+}
+*:hover {
+    scrollbar-color: rgba(107, 114, 128, 0.6) rgba(255, 255, 255, 0.02);
+}
 </style>
 
 <script>
 
+/* ── SIDEBAR TOGGLE (mobile) ──────────────────────────────── */
+function toggleSidebar() {
+    const sidebar  = document.getElementById('sidebar');
+    const overlay  = document.getElementById('sidebar_overlay');
+    const isOpen   = !sidebar.classList.contains('-translate-x-full');
+    if (isOpen) {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    } else {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    }
+}
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('sidebar_overlay').classList.add('hidden');
+}
+
 /* ── THEME ENGINE ─────────────────────────────────────────── */
 const THEMES = [
-    {
-        id: 'midnight',
-        label: 'Midnight',
-        swatch: 'linear-gradient(135deg,#020617,#031b1a)',
-        body: '#020617',
-        overlay: 'radial-gradient(ellipse at top left, #031b1a 0%, #020617 60%, #020617 100%)'
-    },
-    {
-        id: 'cosmos',
-        label: 'Cosmos',
-        swatch: 'linear-gradient(135deg,#0d0221,#1a0533)',
-        body: '#08011a',
-        overlay: 'radial-gradient(ellipse at top left, #1a0533 0%, #08011a 55%, #0a0120 100%)'
-    },
-    {
-        id: 'abyss',
-        label: 'Abyss',
-        swatch: 'linear-gradient(135deg,#010d1f,#011b3a)',
-        body: '#010d1f',
-        overlay: 'radial-gradient(ellipse at top left, #011b3a 0%, #010d1f 55%, #010816 100%)'
-    },
-    {
-        id: 'forest',
-        label: 'Forest',
-        swatch: 'linear-gradient(135deg,#010f07,#012a10)',
-        body: '#010f07',
-        overlay: 'radial-gradient(ellipse at top left, #012a10 0%, #010f07 55%, #011208 100%)'
-    },
-    {
-        id: 'crimson',
-        label: 'Crimson',
-        swatch: 'linear-gradient(135deg,#150204,#2d0409)',
-        body: '#150204',
-        overlay: 'radial-gradient(ellipse at top left, #2d0409 0%, #150204 55%, #1a0305 100%)'
-    },
-    {
-        id: 'ember',
-        label: 'Ember',
-        swatch: 'linear-gradient(135deg,#130900,#2e1600)',
-        body: '#130900',
-        overlay: 'radial-gradient(ellipse at top left, #2e1600 0%, #130900 55%, #1a0d00 100%)'
-    }
+    { id: 'midnight', label: 'Midnight', swatch: 'linear-gradient(135deg,#020617,#031b1a)', body: '#020617', overlay: 'radial-gradient(ellipse at top left, #031b1a 0%, #020617 60%, #020617 100%)' },
+    { id: 'cosmos',   label: 'Cosmos',   swatch: 'linear-gradient(135deg,#0d0221,#1a0533)', body: '#08011a', overlay: 'radial-gradient(ellipse at top left, #1a0533 0%, #08011a 55%, #0a0120 100%)' },
+    { id: 'abyss',    label: 'Abyss',    swatch: 'linear-gradient(135deg,#010d1f,#011b3a)', body: '#010d1f', overlay: 'radial-gradient(ellipse at top left, #011b3a 0%, #010d1f 55%, #010816 100%)' },
+    { id: 'forest',   label: 'Forest',   swatch: 'linear-gradient(135deg,#010f07,#012a10)', body: '#010f07', overlay: 'radial-gradient(ellipse at top left, #012a10 0%, #010f07 55%, #011208 100%)' },
+    { id: 'crimson',  label: 'Crimson',  swatch: 'linear-gradient(135deg,#150204,#2d0409)', body: '#150204', overlay: 'radial-gradient(ellipse at top left, #2d0409 0%, #150204 55%, #1a0305 100%)' },
+    { id: 'ember',    label: 'Ember',    swatch: 'linear-gradient(135deg,#130900,#2e1600)', body: '#130900', overlay: 'radial-gradient(ellipse at top left, #2e1600 0%, #130900 55%, #1a0d00 100%)' }
 ];
 
 function applyTheme(themeId, closePanel = true) {
@@ -296,29 +408,20 @@ function applyTheme(themeId, closePanel = true) {
     document.getElementById('app_body').style.background = t.body;
     document.getElementById('bg_overlay').style.background = t.overlay;
     localStorage.setItem('ff_theme', t.id);
-
-    // Update button preview
     document.getElementById('btn_swatch_preview').style.background = t.swatch;
     document.getElementById('btn_theme_label').textContent = t.label;
-
-    // Update rows
     document.querySelectorAll('.theme-row').forEach(r => {
         r.classList.toggle('active', r.dataset.theme === t.id);
     });
-
     if (closePanel) closeThemePanel();
 }
 
 function toggleThemePanel() {
-    const panel = document.getElementById('theme_panel');
-    panel.classList.toggle('open');
+    document.getElementById('theme_panel').classList.toggle('open');
 }
-
 function closeThemePanel() {
     document.getElementById('theme_panel').classList.remove('open');
 }
-
-// Click outside to close
 document.addEventListener('click', e => {
     const wrap = document.getElementById('theme_picker_wrap');
     if (wrap && !wrap.contains(e.target)) closeThemePanel();
@@ -333,59 +436,75 @@ function renderThemeSwatches() {
             <i class="fa-solid fa-check t-check"></i>
         </div>
     `).join('');
-    // Apply saved or default (don't close panel since it's not open yet)
     applyTheme(localStorage.getItem('ff_theme') || 'midnight', false);
 }
-/* ─────────────────────────────────────────────────────────── */
 
+/* ── AUTH GUARD ───────────────────────────────────────────── */
+const token    = localStorage.getItem("ff_token");
+const userData = JSON.parse(localStorage.getItem("ff_user") || "null");
+const userId   = userData?.id;
 
-const params = new URLSearchParams(location.search);
-const userId = params.get("user_id");
-
-// Guard: if no user_id, kick back to sign-in and remove this page from history
-if (!userId) { location.replace("signin.html"); }
+if (!token || !userId) {
+    localStorage.removeItem("ff_token");
+    localStorage.removeItem("ff_user");
+    location.replace("signin.html");
+} else {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 < Date.now()) {
+            localStorage.clear();
+            location.replace("/signin.html");
+        }
+        // Block admins from regular dashboard
+        if (payload.role === 'admin') {
+            location.replace("/business.html");
+        }
+    } catch (e) {
+        location.replace("/signin.html");
+    }
+}
 const work_area = document.getElementById("work_area");
 
 function setActive(btn) {
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-    if (btn.classList.contains("nav-btn")) btn.classList.add("active");
+    if (btn && btn.classList.contains("nav-btn")) btn.classList.add("active");
 }
 
-/* HOME — centered, welcome card + stats same width */
+/* ── HOME ─────────────────────────────────────────────────── */
 async function loadUser() {
-    work_area.className = "glass-bg flex-1 p-6 flex items-center justify-center";
+    work_area.className = "glass-bg flex-1 p-4 md:p-6 flex items-center justify-center";
 
     work_area.innerHTML = `
-        <div class="relative z-10 flex flex-col gap-5" style="width: 680px;">
+        <div class="relative z-10 flex flex-col gap-4 md:gap-5 w-full max-w-2xl px-2">
 
-            <!-- Welcome card -->
             <div class="content-card" style="max-width:100%;">
                 <h1 id="username"
-                    class="text-5xl font-bold leading-tight bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent mb-3">
+                    class="text-3xl md:text-5xl font-bold leading-tight
+                           bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400
+                           bg-clip-text text-transparent mb-2 md:mb-3">
                     Welcome, there
                 </h1>
-                <p class="text-gray-300 text-base mb-6">
+                <p class="text-gray-300 text-sm md:text-base mb-4 md:mb-6">
                     Create forms, collect responses, and gain insights — all in one place.
                 </p>
-                <div class="flex gap-3">
+                <div class="flex gap-3 flex-wrap">
                     <button onclick="goCreateForm()" class="quick-btn">Create Form</button>
                     <button onclick="goFillForm()" class="quick-btn secondary">Fill Form</button>
                 </div>
             </div>
 
-            <!-- Stat cards — same width as welcome card -->
-            <div class="flex gap-4">
+            <div class="flex gap-3 md:gap-4">
                 <div class="stat-card">
-                    <p class="text-gray-400 text-sm">Total Forms</p>
-                    <h2 id="stat-forms" class="text-3xl font-bold mt-1">--</h2>
+                    <p class="text-gray-400 text-xs md:text-sm">Total Forms</p>
+                    <h2 id="stat-forms" class="text-2xl md:text-3xl font-bold mt-1">--</h2>
                 </div>
                 <div class="stat-card">
-                    <p class="text-gray-400 text-sm">Responses</p>
-                    <h2 id="stat-responses" class="text-3xl font-bold mt-1">--</h2>
+                    <p class="text-gray-400 text-xs md:text-sm">Responses</p>
+                    <h2 id="stat-responses" class="text-2xl md:text-3xl font-bold mt-1">--</h2>
                 </div>
                 <div class="stat-card">
-                    <p class="text-gray-400 text-sm">Active Forms</p>
-                    <h2 id="stat-active" class="text-3xl font-bold mt-1">--</h2>
+                    <p class="text-gray-400 text-xs md:text-sm">Active Forms</p>
+                    <h2 id="stat-active" class="text-2xl md:text-3xl font-bold mt-1">--</h2>
                 </div>
             </div>
 
@@ -395,25 +514,19 @@ async function loadUser() {
     try {
         const res  = await fetch(`/auth/user/${userId}`);
         const data = await res.json();
-        
-        const displayName = data.NAME || "User";
-        
+        const displayName = data.name || "User";
         const usernameEl = document.getElementById("username");
-        if (usernameEl) {
-            usernameEl.innerText = `Welcome, ${displayName}`;
-        }
-        
+        if (usernameEl) usernameEl.innerText = `Welcome, ${displayName}`;
         const sidebarNameEl = document.getElementById("sidebar_user_name");
-        if (sidebarNameEl) {
-            sidebarNameEl.innerText = displayName;
+        if (sidebarNameEl) sidebarNameEl.innerText = displayName;
+        if (data.role && data.role.toLowerCase() === 'hod') {
+            document.getElementById("nav_audit_btn")?.classList.remove("hidden");
+            document.getElementById("nav_dept_forms_btn")?.classList.remove("hidden");
         }
 
-        if (data.USER_TYPE && data.USER_TYPE.toLowerCase() === 'faculty') {
-            document.getElementById("nav_audit_btn").classList.remove("hidden");
-        }
     } catch {
-        const sidebarNameEl = document.getElementById("sidebar_user_name");
-        if (sidebarNameEl) sidebarNameEl.innerText = "User";
+        const el = document.getElementById("sidebar_user_name");
+        if (el) el.innerText = "User";
     }
 
     try {
@@ -425,7 +538,7 @@ async function loadUser() {
         const responsesData = await responsesRes.json();
         if (Array.isArray(formsData)) {
             document.getElementById("stat-forms").innerText  = formsData.length;
-            document.getElementById("stat-active").innerText = formsData.filter(f => f.STATUS === "open").length;
+            document.getElementById("stat-active").innerText = formsData.filter(f => f.status === "open").length;
         }
         if (Array.isArray(responsesData)) {
             document.getElementById("stat-responses").innerText = responsesData.length;
@@ -438,26 +551,25 @@ async function loadUser() {
     }
 }
 
+/* ── LOGOUT ───────────────────────────────────────────────── */
 function confirmLogout() {
     document.getElementById('logout_modal').classList.remove('hidden');
-    // small delay so the transition fires
     requestAnimationFrame(() =>
         document.getElementById('logout_modal_card').classList.remove('scale-95', 'opacity-0')
     );
 }
-
 function closeLogoutModal() {
     const card = document.getElementById('logout_modal_card');
     card.classList.add('scale-95', 'opacity-0');
     setTimeout(() => document.getElementById('logout_modal').classList.add('hidden'), 200);
 }
-
 function logout() {
-    // replace() removes the dashboard from browser history,
-    // so the back button can't return to it after sign-out.
-    location.replace("signin.html");
+    localStorage.removeItem("ff_token");
+    localStorage.removeItem("ff_user");
+    location.replace("/signin.html");
 }
 
+/* ── CHANGE PASSWORD ──────────────────────────────────────── */
 function openChangePassword() {
     document.getElementById('cp_current').value = '';
     document.getElementById('cp_new').value = '';
@@ -469,33 +581,25 @@ function openChangePassword() {
         document.getElementById('change_pw_card').classList.remove('scale-95', 'opacity-0')
     );
 }
-
 function closeChangePassword() {
     const card = document.getElementById('change_pw_card');
     card.classList.add('scale-95', 'opacity-0');
     setTimeout(() => document.getElementById('change_pw_modal').classList.add('hidden'), 200);
 }
-
 async function submitChangePassword() {
-    const current  = document.getElementById('cp_current').value.trim();
-    const newPw    = document.getElementById('cp_new').value.trim();
-    const confirm  = document.getElementById('cp_confirm').value.trim();
-    const errEl    = document.getElementById('cp_error');
-    const okEl     = document.getElementById('cp_success');
-    const btn      = document.getElementById('cp_submit_btn');
+    const current = document.getElementById('cp_current').value.trim();
+    const newPw   = document.getElementById('cp_new').value.trim();
+    const confirm = document.getElementById('cp_confirm').value.trim();
+    const errEl   = document.getElementById('cp_error');
+    const okEl    = document.getElementById('cp_success');
+    const btn     = document.getElementById('cp_submit_btn');
 
     errEl.classList.add('hidden');
     okEl.classList.add('hidden');
 
-    if (!current || !newPw || !confirm) {
-        errEl.textContent = 'All fields are required.'; errEl.classList.remove('hidden'); return;
-    }
-    if (newPw.length < 6) {
-        errEl.textContent = 'New password must be at least 6 characters.'; errEl.classList.remove('hidden'); return;
-    }
-    if (newPw !== confirm) {
-        errEl.textContent = 'New passwords do not match.'; errEl.classList.remove('hidden'); return;
-    }
+    if (!current || !newPw || !confirm) { errEl.textContent = 'All fields are required.'; errEl.classList.remove('hidden'); return; }
+    if (newPw.length < 6) { errEl.textContent = 'New password must be at least 6 characters.'; errEl.classList.remove('hidden'); return; }
+    if (newPw !== confirm) { errEl.textContent = 'New passwords do not match.'; errEl.classList.remove('hidden'); return; }
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Saving...';
@@ -507,9 +611,8 @@ async function submitChangePassword() {
             body: JSON.stringify({ user_id: userId, current_password: current, new_password: newPw })
         });
         const data = await res.json();
-
         if (res.ok) {
-            okEl.textContent = '✓ Password updated successfully!';
+            okEl.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Password updated successfully!';
             okEl.classList.remove('hidden');
             document.getElementById('cp_current').value = '';
             document.getElementById('cp_new').value = '';
@@ -528,20 +631,21 @@ async function submitChangePassword() {
     }
 }
 
-/* MY RESPONSES */
+/* ── MY RESPONSES ─────────────────────────────────────────── */
 async function goMyResponses() {
-    work_area.className = "glass-bg flex-1 p-12 flex flex-col m-8 !overflow-y-auto";
+    work_area.className = "glass-bg flex-1 p-3 md:p-8 flex flex-col md:m-4 lg:m-8 !overflow-y-auto";
     work_area.innerHTML = `
-        <div class="relative z-10 grid grid-cols-5 gap-6 flex-1">
-            <div class="col-span-3 overflow-y-auto px-4">
-                <h2 class="text-2xl font-bold text-emerald-400 mb-4">My Responses</h2>
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-6 gap-4 lg:gap-6 flex-1 min-h-0">
+            <div class="lg:col-span-3 overflow-y-auto px-1 md:px-4 min-h-0">
+                <h2 class="text-xl md:text-2xl font-bold text-emerald-400 mb-4">My Responses</h2>
                 <div id="my_responses_list" class="space-y-3">
                     <p class="text-gray-400">Loading...</p>
                 </div>
             </div>
-            <div class="col-span-2 overflow-y-auto px-4">
-                <h2 class="text-2xl font-bold text-emerald-400 mb-4">&nbsp;</h2>
-                <div id="my_response_detail" class="text-gray-400">Select a form to view your response</div>
+            <div class="lg:col-span-3 overflow-y-auto min-h-[200px] lg:min-h-0 bg-black/20 border border-white/10 rounded-2xl p-5 mt-6 lg:bg-transparent lg:border-0 lg:p-0 lg:px-4 lg:rounded-none lg:mt-0">
+                <h2 class="text-xl md:text-2xl font-bold text-emerald-400 mb-4 hidden lg:block">&nbsp;</h2>
+                <h2 class="text-base font-semibold text-gray-400 mb-3 lg:hidden">Response Detail</h2>
+                <div id="my_response_detail" class="text-gray-400 text-sm">Select a form above to view your response</div>
             </div>
         </div>
     `;
@@ -554,31 +658,29 @@ async function goMyResponses() {
             container.innerHTML = `<p class="text-gray-400">No responses submitted yet.</p>`;
             return;
         }
-        const byForm = {};
-        data.forEach(r => {
-            if (!byForm[r.FORM_ID]) byForm[r.FORM_ID] = {
-                title: r.TITLE || `Form #${r.FORM_ID}`,
-                responseId: r.RESPONSE_ID,
-                submittedAt: r.SUBMITTED_AT,
-                formId: r.FORM_ID,
-                reportReleased: r.REPORT_RELEASED
-            };
-        });
-        container.innerHTML = Object.values(byForm).map(f => `
-            <div onclick="viewMyResponse(${f.responseId})"
-                class="p-4 rounded-xl border cursor-pointer transition bg-white/5 border-white/10 hover:bg-white/10 flex justify-between items-center">
-                <div>
-                    <p class="text-white font-semibold">${f.title}</p>
-                    <p class="text-gray-400 text-xs mt-1">Submitted: ${new Date(f.submittedAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}</p>
+        container.innerHTML = data.map(r => {
+            const title = r.title || `Form #${r.form_id}`;
+            const description = r.description || '';
+            return `
+                <div onclick="viewMyResponse(${r.response_id}, this.getAttribute('data-title'), this.getAttribute('data-desc'))"
+                    data-title="${title.replace(/"/g, '&quot;')}"
+                    data-desc="${description.replace(/"/g, '&quot;')}"
+                    class="p-4 rounded-xl border cursor-pointer transition
+                           bg-white/5 border-white/10 hover:bg-white/20 flex justify-between items-center">
+                    <div class="min-w-0 mr-2">
+                        <p class="text-white font-semibold truncate">${title}</p>
+                        <p class="text-gray-400 text-sm truncate">${description}</p>
+                        <p class="text-gray-400 text-xs mt-1">Submitted: ${new Date(r.submitted_at).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true })}</p>
+                    </div>
+                    ${r.report_released === 'yes' ? `
+                        <button onclick="event.stopPropagation(); viewPublicReport(${r.form_id}, ${r.response_id})"
+                            class="flex-shrink-0 text-xs px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 font-medium">
+                            View Report
+                        </button>
+                    ` : ''}
                 </div>
-                ${f.reportReleased === 'yes' ? `
-                    <button onclick="event.stopPropagation(); viewPublicReport(${f.formId}, ${f.responseId})" 
-                        class="text-xs px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 font-medium">
-                        View Public Report
-                    </button>
-                ` : ''}
-            </div>
-        `).join("");
+            `;
+        }).join("");
     } catch {
         document.getElementById("my_responses_list").innerHTML = `<p class="text-red-400">Failed to load responses.</p>`;
     }
@@ -587,51 +689,45 @@ async function goMyResponses() {
 async function viewPublicReport(formId, responseId) {
     const detail = document.getElementById("my_response_detail");
     detail.innerHTML = `<p class="text-gray-400">Loading Report...</p>`;
-    
     try {
-        const res = await fetch(`/responses/report/${formId}?user_id=${userId}`);
+        const res  = await fetch(`/responses/report/${formId}?user_id=${userId}`);
         const data = await res.json();
-        
-        if (!res.ok) {
-            detail.innerHTML = `<p class="text-red-400">${data.message}</p>`;
-            return;
-        }
-        
+        if (!res.ok) { detail.innerHTML = `<p class="text-red-400">${data.message}</p>`; return; }
         detail.innerHTML = `
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-white">Public Report Stats</h3>
-                <button onclick="viewMyResponse(${responseId})" class="text-sm px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition">
+            <div class="flex justify-between items-center mb-6 flex-wrap gap-2">
+                <h3 class="text-lg md:text-xl font-bold text-white">Public Report Stats</h3>
+                <button onclick="viewMyResponse(${responseId})"
+                    class="text-sm px-3 py-1 rounded-lg bg-white/5 border border-white/10
+                           text-gray-300 hover:text-white hover:bg-white/10 transition">
                     Back to My Response
                 </button>
             </div>
             <div id="public_report_render_area"></div>
         `;
-        
         renderReport(data, "public_report_render_area");
     } catch {
         detail.innerHTML = `<p class="text-red-400">Failed to load public report.</p>`;
     }
 }
 
-async function viewMyResponse(responseId) {
+async function viewMyResponse(responseId, title = "No Title", description = "No description available") {
     const detail = document.getElementById("my_response_detail");
     detail.innerHTML = `<p class="text-gray-400">Loading...</p>`;
-    
     try {
         const res  = await fetch(`/responses/single/${responseId}`);
         const data = await res.json();
-        
-        if (!res.ok) { 
-            detail.innerHTML = `<p class="text-red-400">${data.message || 'Error fetching response'}</p>`; 
-            return; 
-        }
+        if (!res.ok) { detail.innerHTML = `<p class="text-red-400">${data.message || 'Error fetching response'}</p>`; return; }
 
         detail.innerHTML = `
             <div class="space-y-3">
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p class="text-white text-xl font-semibold mb-1">${title}</p>
+                    <p class="text-gray-400 text-sm">${description}</p>
+                </div>
                 ${data.map(a => `
                     <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                        <p class="text-gray-400 text-sm">${a.QUESTION_TEXT || "Question"}</p>
-                        <p class="text-white mt-1">${a.ANSWER_TEXT ?? a.ANSWER_NUMBER ?? a.OPTION_TEXT ?? "-"}</p>
+                        <p class="text-gray-400 text-sm">${a.question_text || "Question"}</p>
+                        <p class="text-white mt-1">${a.answer_text ?? a.answer_number ?? a.option_text ?? "-"}</p>
                     </div>
                 `).join("")}
             </div>
@@ -642,29 +738,183 @@ async function viewMyResponse(responseId) {
     }
 }
 
+/* FORM FEED */
+async function goFeed() {
+    work_area.className = "glass-bg flex-1 p-3 md:p-8 m-1 md:m-4 lg:m-8 !overflow-y-auto";
+    work_area.innerHTML = `
+        <div class="relative z-10">
+            <h2 class="text-xl md:text-2xl font-bold text-emerald-400 mb-1">Form Feed</h2>
+            <p class="text-gray-500 text-sm mb-5">Forms available for you to fill.</p>
+            <div id="feed_list" class="space-y-3">
+                <p class="text-gray-400 text-sm">Loading...</p>
+            </div>
+        </div>
+    `;
+
+    try {
+        const res  = await fetch(`/forms/feed?user_id=${userId}`);
+        const data = await res.json();
+        const list = document.getElementById('feed_list');
+
+        if (!res.ok) {
+            list.innerHTML = `<p class="text-red-400 text-sm">${data.message}</p>`;
+            return;
+        }
+        if (!data.length) {
+            list.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-16 text-center">
+                    <i class="fa-solid fa-layer-group text-4xl text-gray-600 mb-4"></i>
+                    <p class="text-gray-500 text-sm">No forms available for you right now.</p>
+                    <p class="text-gray-600 text-xs mt-1">Check back later or use a form code to fill directly.</p>
+                </div>`;
+            return;
+        }
+
+        list.innerHTML = data.map(f => {
+            const deadline = new Date(f.deadline);
+            const isUrgent = (deadline - Date.now()) < 24 * 60 * 60 * 1000;
+            const accessLabel = {
+                public:     'Everyone',
+                dept:       f.target_dept_name || 'Department',
+                batch:      `Batch ${f.target_batch || ''}`,
+                role:       f.target_role || 'Role',
+                dept_batch: `${f.target_dept_name || 'Dept'} · Batch ${f.target_batch || ''}`,
+                dept_role:  `${f.target_dept_name || 'Dept'} · ${f.target_role || 'Role'}`,
+            }[f.access_type] || f.access_type;
+
+            return `
+                <div class="p-4 rounded-xl border bg-white/5 border-white/10
+                            hover:bg-white/10 transition cursor-pointer group"
+                     onclick="goFillFormWithCode('${f.form_code}')">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-white font-semibold truncate">${f.title}</p>
+                            <p class="text-gray-400 text-xs mt-1 line-clamp-2">${f.description || 'No description'}</p>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                                <span class="text-gray-500 text-xs">
+                                    By <span class="text-gray-300">${f.creator_name}</span>
+                                </span>
+                                <span class="text-gray-600 text-xs hidden sm:inline">·</span>
+                                <span class="text-gray-500 text-xs">${accessLabel}</span>
+                                <span class="text-gray-600 text-xs hidden sm:inline">·</span>
+                                <span class="text-xs ${isUrgent ? 'text-red-400' : 'text-gray-500'}">
+                                    ${isUrgent ? '<i class="fa-solid fa-clock mr-1"></i>' : ''}
+                                    Closes ${deadline.toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}
+                                </span>
+                            </div>
+                        </div>
+                        <span class="flex-shrink-0 text-xs px-3 py-1.5 rounded-xl
+                                     bg-emerald-500/20 text-emerald-400
+                                     group-hover:bg-emerald-500/30 transition">
+                            Fill <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch(e) {
+        document.getElementById('feed_list').innerHTML = `<p class="text-red-400 text-sm">Failed to load feed.</p>`;
+    }
+}
+
+function goFillFormWithCode(code) {
+    goFillForm();
+    // Small delay to let the UI render, then pre-fill the code
+    setTimeout(() => {
+        const input = document.getElementById('form_code_input');
+        if (input) {
+            input.value = code;
+            loadFormByCode();
+        }
+    }, 100);
+}
+
+/* HOD DEPT FORMS */
+async function goDeptForms() {
+    work_area.className = "glass-bg flex-1 p-3 md:p-8 m-1 md:m-4 lg:m-8 !overflow-y-auto";
+    work_area.innerHTML = `
+        <div class="relative z-10">
+            <h2 class="text-xl md:text-2xl font-bold text-emerald-400 mb-1">Department Forms</h2>
+            <p class="text-gray-500 text-sm mb-5">All forms created by members of your department.</p>
+            <div id="dept_forms_list" class="space-y-3">
+                <p class="text-gray-400 text-sm">Loading...</p>
+            </div>
+        </div>
+    `;
+
+    try {
+        const res  = await fetch(`/forms/dept-forms?user_id=${userId}`);
+        const data = await res.json();
+        const list = document.getElementById('dept_forms_list');
+
+        if (!res.ok) {
+            list.innerHTML = `<p class="text-red-400 text-sm">${data.message}</p>`;
+            return;
+        }
+        if (!data.length) {
+            list.innerHTML = `<p class="text-gray-500 text-sm">No forms created in your department yet.</p>`;
+            return;
+        }
+
+        list.innerHTML = data.map(f => `
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.07] transition">
+                <div class="flex items-start justify-between gap-3 flex-wrap">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <p class="text-white font-semibold">${f.title}</p>
+                            <span class="text-xs px-2 py-0.5 rounded-full ${
+                                f.status === 'open'
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'bg-red-500/20 text-red-400'
+                            }">${f.status}</span>
+                        </div>
+                        <p class="text-gray-400 text-xs">
+                            By <span class="text-gray-300">${f.creator_name}</span>
+                            · ${f.access_type}
+                            ${f.target_dept_name ? `· ${f.target_dept_name}` : ''}
+                        </p>
+                        <p class="text-gray-500 text-xs mt-0.5">
+                            Deadline: ${new Date(f.deadline).toLocaleDateString('en-GB', {
+                                day:'2-digit', month:'short', year:'numeric'
+                            })}
+                            · Code: <span class="font-mono text-gray-300">${f.form_code}</span>
+                        </p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-emerald-400 font-bold text-lg">${f.response_count}</p>
+                        <p class="text-gray-500 text-xs">responses</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        document.getElementById('dept_forms_list').innerHTML =
+            `<p class="text-red-400 text-sm">Failed to load department forms.</p>`;
+    }
+}
+
+
+
 renderThemeSwatches();
 loadUser();
 </script>
 
-<script src="newForm.js?v=4" defer></script>
-<script src="myForms.js?v=4" defer></script>
-<script src="fillForm.js?v=4" defer></script>
-<script src="audit.js?v=4" defer></script>
+<script src="newForm.js?v=5" defer></script>
+<script src="myForms.js?v=5" defer></script>
+<script src="fillForm.js?v=5" defer></script>
+<script src="audit.js?v=5" defer></script>
 
 <!-- Change Password Modal -->
 <div id="change_pw_modal"
-     class="hidden fixed inset-0 z-[9999] flex items-center justify-center"
+     class="hidden fixed inset-0 z-[9999] flex items-center justify-center px-4"
      onclick="if(event.target===this) closeChangePassword()">
-
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
     <div id="change_pw_card"
-         class="relative z-10 w-[420px] bg-gray-900/90 border border-white/10 rounded-2xl p-8
-                shadow-[0_30px_80px_rgba(0,0,0,.7)]
+         class="relative z-10 w-full max-w-[420px] bg-gray-900/90 border border-white/10
+                rounded-2xl p-6 md:p-8 shadow-[0_30px_80px_rgba(0,0,0,.7)]
                 scale-95 opacity-0 transition-all duration-200 ease-out">
-
         <div class="flex items-center gap-3 mb-6">
-            <div class="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center">
+            <div class="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                 <i class="fa-solid fa-key text-emerald-400 text-lg"></i>
             </div>
             <div>
@@ -672,7 +922,6 @@ loadUser();
                 <p class="text-gray-400 text-xs mt-0.5">Update your account password</p>
             </div>
         </div>
-
         <div class="space-y-4">
             <div>
                 <label class="text-xs text-gray-400 uppercase tracking-wider mb-1.5 block">Current Password</label>
@@ -693,10 +942,8 @@ loadUser();
                            placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 transition" />
             </div>
         </div>
-
-        <p id="cp_error" class="text-red-400 text-xs mt-3 hidden"></p>
+        <p id="cp_error"   class="text-red-400 text-xs mt-3 hidden"></p>
         <p id="cp_success" class="text-emerald-400 text-xs mt-3 hidden"></p>
-
         <div class="flex gap-3 mt-6">
             <button onclick="closeChangePassword()"
                 class="flex-1 py-2.5 rounded-xl bg-white/6 border border-white/10
@@ -714,28 +961,20 @@ loadUser();
 
 <!-- Sign-out Confirmation Modal -->
 <div id="logout_modal"
-     class="hidden fixed inset-0 z-[9999] flex items-center justify-center"
+     class="hidden fixed inset-0 z-[9999] flex items-center justify-center px-4"
      onclick="if(event.target===this) closeLogoutModal()">
-
-    <!-- Backdrop -->
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-    <!-- Card -->
     <div id="logout_modal_card"
-         class="relative z-10 w-[360px] bg-gray-900/90 border border-white/10 rounded-2xl p-8
-                shadow-[0_30px_80px_rgba(0,0,0,.7)]
+         class="relative z-10 w-full max-w-[360px] bg-gray-900/90 border border-white/10
+                rounded-2xl p-8 shadow-[0_30px_80px_rgba(0,0,0,.7)]
                 scale-95 opacity-0 transition-all duration-200 ease-out text-center">
-
-        <!-- Icon -->
         <div class="w-16 h-16 rounded-full bg-red-500/15 flex items-center justify-center mx-auto mb-5">
             <i class="fa-solid fa-right-from-bracket text-red-400 text-2xl"></i>
         </div>
-
         <h3 class="text-xl font-bold text-white mb-2">Sign out?</h3>
         <p class="text-gray-400 text-sm mb-7 leading-relaxed">
             You'll be returned to the sign-in page.<br>Any unsaved changes will be lost.
         </p>
-
         <div class="flex gap-3">
             <button onclick="closeLogoutModal()"
                 class="flex-1 py-2.5 rounded-xl bg-white/6 border border-white/10
