@@ -22,7 +22,7 @@ A forms platform built for academic institutions with secure authentication and 
 ## How to Run Locally
 1. Clone this repo
 2. npm install
-3. Set up database connection
+3. Set up database connection and run the "project_db.sql"
 4. npm start
 
 ## TODO (Upcoming)
