@@ -157,8 +157,8 @@ router.get("/:id", async (req, res) => {
     try {
         const result = await pool.query(
             `select i.*, 
-                    COUNT(DISTINCT u.user_id) AS member_count,
-                    COUNT(DISTINCT d.dept_id) AS dept_count
+                    count(distinct u.user_id) as member_count,
+                    count(distinct d.dept_id) as dept_count
              from institutions i
              left join users u on u.institution_id = i.institution_id
              left join departments d on d.institution_id = i.institution_id

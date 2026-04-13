@@ -14,10 +14,10 @@ router.post("/login", async (req, res) => {
 
     try {
         const result = await pool.query(
-            `SELECT u.*, d.name AS dept_name
-             FROM users u
-             LEFT JOIN departments d ON u.dept_id = d.dept_id
-             WHERE u.email = $1`,
+            `select u.*, d.name as dept_name
+             from users u
+             left join departments d on u.dept_id = d.dept_id
+             where u.email = $1`,
             [email]
         );
 
@@ -92,7 +92,7 @@ router.post("/signup", async (req, res) => {
     try {
         // Check if email was pre-registered by an admin (status = pending)
         const check = await pool.query(
-            `SELECT user_id, status, role FROM users WHERE email = $1`,
+            `select user_id, status, role from users where email = $1`,
             [email.trim().toLowerCase()]
         );
 
@@ -109,9 +109,9 @@ router.post("/signup", async (req, res) => {
         // Activate the account — fill in name and password
         const hashpwd = await bcrypt.hash(password, 12);
         await pool.query(
-            `UPDATE users
-             SET name = $1, password = $2, status = 'active'
-             WHERE user_id = $3`,
+            `update users
+             set name = $1, password = $2, status = 'active'
+             where user_id = $3`,
             [name.trim(), hashpwd, user.user_id]
         );
 
@@ -131,11 +131,11 @@ router.get("/user/:id", async (req, res) => {
 
     try {
         const result = await pool.query(
-            `SELECT u.user_id, u.name, u.role, u.institution_id,
-                    u.dept_id, u.batch, d.name AS dept_name
-             FROM users u
-             LEFT JOIN departments d ON u.dept_id = d.dept_id
-             WHERE u.user_id = $1`,
+            `select u.user_id, u.name, u.role, u.institution_id,
+                    u.dept_id, u.batch, d.name as dept_name
+             from users u
+             left join departments d on u.dept_id = d.dept_id
+             where u.user_id = $1`,
             [id]
         );
 
@@ -162,7 +162,7 @@ router.post("/change-password", async (req, res) => {
 
     try {
         const check = await pool.query(
-            `SELECT password FROM users WHERE user_id = $1`,
+            `select password from users where user_id = $1`,
             [user_id]
         );
 
@@ -177,7 +177,7 @@ router.post("/change-password", async (req, res) => {
 
         const newHash = await bcrypt.hash(new_password, 12);
         await pool.query(
-            `UPDATE users SET password = $1 WHERE user_id = $2`,
+            `update users set password = $1 where user_id = $2`,
             [newHash, user_id]
         );
 

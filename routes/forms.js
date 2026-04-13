@@ -9,15 +9,15 @@ async function autoCloseExpiredForms(institutionId = null) {
     try {
         if (institutionId) {
             await pool.query(
-                `UPDATE forms SET status = 'closed'
-                 WHERE status = 'open' AND deadline < NOW()
-                 AND institution_id = $1`,
+                `update forms set status = 'closed'
+                 where status = 'open' and deadline < NOW()
+                 and institution_id = $1`,
                 [institutionId]
             );
         } else {
             await pool.query(
-                `UPDATE forms SET status = 'closed'
-                 WHERE status = 'open' AND deadline < NOW()`
+                `update forms set status = 'closed'
+                 where status = 'open' and deadline < NOW()`
             );
         }
     } catch (err) {
@@ -26,6 +26,36 @@ async function autoCloseExpiredForms(institutionId = null) {
 }
 
 const router = express.Router();
+
+// ── Admin Delete Any Form ─────────────────────────────────────────────────────
+// DELETE /forms/admin/:id?institution_id=1
+// Admin can delete any form in their institution
+router.delete("/admin/:id", async (req, res) => {
+    const formId        = Number(req.params.id);
+    const institutionId = Number(req.query.institution_id);
+
+    if (isNaN(formId) || isNaN(institutionId)) {
+        return res.status(400).json({ message: "Invalid parameters" });
+    }
+
+    try {
+        const result = await pool.query(
+            `delete from forms
+             where form_id = $1 and institution_id = $2
+             returning title`,
+            [formId, institutionId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Form not found" });
+        }
+
+        res.json({ ok: true, message: `Form "${result.rows[0].title}" deleted.` });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to delete form" });
+    }
+});
 
 // ── Create Form ───────────────────────────────────────────────────────────────
 router.post("/create", async (req, res) => {
@@ -73,12 +103,12 @@ router.post("/create", async (req, res) => {
         const institution_id = creatorRes.rows[0].institution_id;
 
         const formResult = await client.query(
-            `INSERT INTO forms
+            `insert into forms
              (form_code, title, description, creator_id, institution_id,
               access_type, target_dept_id, target_role, target_batch,
               deadline, status, theme_color, allow_multiple)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::timestamptz,'open',$11,$12)
-             RETURNING form_id`,
+             values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::timestamptz,'open',$11,$12)
+             returning form_id`,
             [
                 form_code, title, description,
                 Number(creator_id), institution_id,
@@ -96,15 +126,15 @@ router.post("/create", async (req, res) => {
 
         for (const q of questions) {
             const qResult = await client.query(
-                `INSERT INTO questions (form_id, question_text, question_type, is_required)
-                 VALUES ($1, $2, $3, $4) RETURNING question_id`,
+                `insert into questions (form_id, question_text, question_type, is_required)
+                 values ($1, $2, $3, $4) returning question_id`,
                 [formId, q.text, q.type, q.required ? 1 : 0]
             );
             const questionId = qResult.rows[0].question_id;
             if (q.type === "mcq") {
                 for (const opt of q.options) {
                     await client.query(
-                        `INSERT INTO options (question_id, option_text) VALUES ($1, $2)`,
+                        `insert into options (question_id, option_text) values ($1, $2)`,
                         [questionId, opt]
                     );
                 }
@@ -136,7 +166,7 @@ router.get('/code/:code', async (req, res) => {
         await autoCloseExpiredForms();
 
         const formResult = await pool.query(
-            `SELECT form_id, institution_id FROM forms WHERE form_code = $1`,
+            `select form_id, institution_id from forms where form_code = $1`,
             [code]
         );
 
@@ -148,7 +178,7 @@ router.get('/code/:code', async (req, res) => {
 
         // Check user belongs to same institution
         const userRes = await pool.query(
-            `SELECT institution_id FROM users WHERE user_id = $1`,
+            `select institution_id from users where user_id = $1`,
             [userId]
         );
         if (userRes.rows.length === 0 || userRes.rows[0].institution_id !== institution_id) {
@@ -157,7 +187,7 @@ router.get('/code/:code', async (req, res) => {
 
         // Use fn_user_can_see_form for full access check
         const accessRes = await pool.query(
-            `SELECT fn_user_can_see_form($1, $2) AS can_see`,
+            `select fn_user_can_see_form($1, $2) as can_see`,
             [userId, form_id]
         );
 
@@ -166,23 +196,23 @@ router.get('/code/:code', async (req, res) => {
         }
 
         const form = await pool.query(
-            `SELECT form_id, title, description, access_type, deadline,
+            `select form_id, title, description, access_type, deadline,
                     theme_color, allow_multiple
-             FROM forms WHERE form_id = $1`,
+             from forms where form_id = $1`,
             [form_id]
         );
 
         const qResult = await pool.query(
-            `SELECT question_id, question_text, question_type, is_required
-             FROM questions WHERE form_id = $1 ORDER BY question_id`,
+            `select question_id, question_text, question_type, is_required
+             from questions where form_id = $1 order by question_id`,
             [form_id]
         );
 
         const oResult = await pool.query(
-            `SELECT question_id, option_id, option_text
-             FROM options
-             WHERE question_id IN (SELECT question_id FROM questions WHERE form_id = $1)
-             ORDER BY option_id`,
+            `select question_id, option_id, option_text
+             from options
+             where question_id in (select question_id from questions where form_id = $1)
+             order by option_id`,
             [form_id]
         );
 
@@ -208,7 +238,7 @@ router.get("/myforms", async (req, res) => {
     try {
         // Get user's institution
         const userRes = await pool.query(
-            `SELECT institution_id FROM users WHERE user_id = $1`,
+            `select institution_id from users where user_id = $1`,
             [userid]
         );
         if (userRes.rows.length === 0) {
@@ -219,14 +249,14 @@ router.get("/myforms", async (req, res) => {
         await autoCloseExpiredForms(institution_id);
 
         const result = await pool.query(
-            `SELECT f.form_id, f.title, f.description, f.form_code, f.status,
+            `select f.form_id, f.title, f.description, f.form_code, f.status,
                     f.deadline, f.created_at, f.access_type, f.report_released,
                     f.target_dept_id, f.target_role, f.target_batch,
                     d.name AS target_dept_name
-             FROM forms f
-             LEFT JOIN departments d ON f.target_dept_id = d.dept_id
-             WHERE f.creator_id = $1
-             ORDER BY f.created_at DESC`,
+             from forms f
+             left join departments d on f.target_dept_id = d.dept_id
+             where f.creator_id = $1
+             order by f.created_at desc`,
             [userid]
         );
 
@@ -249,7 +279,7 @@ router.get("/feed", async (req, res) => {
     try {
         // Get user details
         const userRes = await pool.query(
-            `SELECT institution_id, dept_id, role, batch FROM users WHERE user_id = $1`,
+            `select institution_id, dept_id, role, batch from users where user_id = $1`,
             [userId]
         );
         if (userRes.rows.length === 0) {
@@ -262,19 +292,19 @@ router.get("/feed", async (req, res) => {
         // Fetch all open forms in institution, filter using fn_user_can_see_form
         // Exclude forms created by the user (they see those in My Forms)
         const result = await pool.query(
-            `SELECT f.form_id, f.title, f.description, f.form_code,
+            `select f.form_id, f.title, f.description, f.form_code,
                     f.status, f.deadline, f.created_at, f.access_type,
                     f.target_dept_id, f.target_role, f.target_batch,
                     d.name AS target_dept_name,
                     u.name AS creator_name, u.role AS creator_role
-             FROM forms f
-             LEFT JOIN departments d ON f.target_dept_id = d.dept_id
-             JOIN users u ON f.creator_id = u.user_id
-             WHERE f.institution_id = $1
-               AND f.status = 'open'
-               AND f.creator_id != $2
-               AND fn_user_can_see_form($2, f.form_id) = TRUE
-             ORDER BY f.created_at DESC`,
+             from forms f
+             left join departments d on f.target_dept_id = d.dept_id
+             join users u on f.creator_id = u.user_id
+             where f.institution_id = $1
+               and f.status = 'open'
+               and f.creator_id != $2
+               and fn_user_can_see_form($2, f.form_id) = TRUE
+             order by f.created_at DESC`,
             [user.institution_id, userId]
         );
 
@@ -291,7 +321,7 @@ router.post("/toggle-status", async (req, res) => {
     const { form_id } = req.body;
     try {
         const current = await pool.query(
-            `SELECT status FROM forms WHERE form_id = $1`,
+            `select status from forms where form_id = $1`,
             [Number(form_id)]
         );
         if (current.rows.length === 0) {
@@ -299,7 +329,7 @@ router.post("/toggle-status", async (req, res) => {
         }
         const newStatus = current.rows[0].status === 'open' ? 'closed' : 'open';
         await pool.query(
-            `UPDATE forms SET status = $1 WHERE form_id = $2`,
+            `update forms set status = $1 where form_id = $2`,
             [newStatus, Number(form_id)]
         );
         return res.json({ message: `Form is now ${newStatus}`, status: newStatus });
@@ -314,12 +344,12 @@ router.post("/toggle-report", async (req, res) => {
     const { form_id } = req.body;
     try {
         const current = await pool.query(
-            `SELECT report_released FROM forms WHERE form_id = $1`,
+            `select report_released from forms where form_id = $1`,
             [Number(form_id)]
         );
         const newVal = current.rows[0].report_released === "yes" ? "no" : "yes";
         await pool.query(
-            `UPDATE forms SET report_released = $1 WHERE form_id = $2`,
+            `update forms set report_released = $1 where form_id = $2`,
             [newVal, Number(form_id)]
         );
         res.json({ message: "Report visibility updated", status: newVal });
@@ -333,8 +363,8 @@ router.post("/toggle-report", async (req, res) => {
 router.get("/get-templates", async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT template_id, name, description, structure
-             FROM form_templates ORDER BY template_id`
+            `select template_id, name, description, structure
+             from form_templates order by template_id`
         );
         res.json(result.rows);
     } catch (err) {
@@ -350,7 +380,7 @@ router.get("/audit-logs", async (req, res) => {
 
     try {
         const userCheck = await pool.query(
-            `SELECT role, institution_id, dept_id FROM users WHERE user_id = $1`,
+            `select role, institution_id, dept_id from users where user_id = $1`,
             [user_id]
         );
 
@@ -375,26 +405,26 @@ router.get("/audit-logs", async (req, res) => {
 
 
         const result = await pool.query(
-            `SELECT l.log_time, l.action_type, u.name AS user_name,
-                    f.title AS form_title, l.metadata
-             FROM audit_logs l
-             LEFT JOIN users u ON l.user_id = u.user_id
-             LEFT JOIN forms f ON l.form_id = f.form_id
-             WHERE l.institution_id = $1
-               AND (
+            `select l.log_time, l.action_type, u.name as user_name,
+                    f.title as form_title, l.metadata
+             from audit_logs l
+             left join users u on l.user_id = u.user_id
+             left join forms f on l.form_id = f.form_id
+             where l.institution_id = $1
+               and (
                    -- Form events in this dept
-                   (l.form_id IS NOT NULL AND f.creator_id IN (
-                       SELECT user_id FROM users
-                       WHERE dept_id = $2 AND institution_id = $1
+                   (l.form_id is not null and f.creator_id in (
+                       select user_id from users
+                       where dept_id = $2 and institution_id = $1
                    ))
-                   OR
+                   or
                    -- Member events (user belongs to this dept)
-                   (l.form_id IS NULL AND l.user_id IN (
-                       SELECT user_id FROM users
-                       WHERE dept_id = $2 AND institution_id = $1
+                   (l.form_id is null and l.user_id in (
+                       select user_id from users
+                       where dept_id = $2 and institution_id = $1
                    ))
                )
-             ORDER BY l.log_time DESC LIMIT 100`,
+             order by l.log_time desc limit 100`,
             [institution_id, dept_id]
         );
         res.json(result.rows);
@@ -411,13 +441,13 @@ router.get("/:id/edit", async (req, res) => {
 
     try {
         const fRes = await pool.query(
-            `SELECT f.form_id, f.title, f.description, f.access_type,
+            `select f.form_id, f.title, f.description, f.access_type,
                     f.target_dept_id, f.target_role, f.target_batch,
                     f.deadline, f.theme_color, f.allow_multiple, f.creator_id,
-                    d.name AS target_dept_name
-             FROM forms f
-             LEFT JOIN departments d ON f.target_dept_id = d.dept_id
-             WHERE f.form_id = $1`,
+                    d.name as target_dept_name
+             from forms f
+             left join departments d on f.target_dept_id = d.dept_id
+             where f.form_id = $1`,
             [Number(id)]
         );
         if (fRes.rows.length === 0) return res.status(404).json({ message: "Form not found" });
@@ -425,19 +455,19 @@ router.get("/:id/edit", async (req, res) => {
         if (form.creator_id !== Number(user_id)) return res.status(403).json({ message: "Unauthorized" });
 
         const qRes = await pool.query(
-            `SELECT question_id, question_text, question_type, is_required
-             FROM questions WHERE form_id = $1 ORDER BY question_id`,
+            `select question_id, question_text, question_type, is_required
+             from questions where form_id = $1 order by question_id`,
             [Number(id)]
         );
         const oRes = await pool.query(
-            `SELECT question_id, option_id, option_text
-             FROM options WHERE question_id IN
-               (SELECT question_id FROM questions WHERE form_id = $1)
-             ORDER BY option_id`,
+            `select question_id, option_id, option_text
+             from options where question_id in
+               (select question_id from questions where form_id = $1)
+             order by option_id`,
             [Number(id)]
         );
         const rRes = await pool.query(
-            `SELECT COUNT(*) AS cnt FROM responses WHERE form_id = $1`,
+            `select count(*) as cnt from responses where form_id = $1`,
             [Number(id)]
         );
 
@@ -467,20 +497,20 @@ router.put("/:id", async (req, res) => {
         await client.query('BEGIN');
 
         const ownerRes = await client.query(
-            `SELECT creator_id FROM forms WHERE form_id = $1`,
+            `select creator_id from forms where form_id = $1`,
             [Number(id)]
         );
         if (ownerRes.rows.length === 0) return res.status(404).json({ message: "Form not found" });
         if (ownerRes.rows[0].creator_id !== Number(user_id)) return res.status(403).json({ message: "Unauthorized" });
 
         const rRes = await client.query(
-            `SELECT COUNT(*) AS cnt FROM responses WHERE form_id = $1`,
+            `select count(*) as cnt from responses where form_id = $1`,
             [Number(id)]
         );
         const hasResponses = Number(rRes.rows[0].cnt) > 0;
 
         await client.query(
-            `UPDATE forms SET
+            `update forms set
                title          = $1,
                description    = $2,
                deadline       = $3::timestamptz,
@@ -490,7 +520,7 @@ router.put("/:id", async (req, res) => {
                target_batch   = $7,
                theme_color    = $8,
                allow_multiple = $9
-             WHERE form_id = $10`,
+             where form_id = $10`,
             [
                 title, description, deadline, access_type,
                 target_dept_id || null,
@@ -503,18 +533,18 @@ router.put("/:id", async (req, res) => {
         );
 
         if (!hasResponses && Array.isArray(questions) && questions.length > 0) {
-            await client.query(`DELETE FROM questions WHERE form_id = $1`, [Number(id)]);
+            await client.query(`delete from questions where form_id = $1`, [Number(id)]);
             for (const q of questions) {
                 const qResult = await client.query(
-                    `INSERT INTO questions (form_id, question_text, question_type, is_required)
-                     VALUES ($1, $2, $3, $4) RETURNING question_id`,
+                    `insert into questions (form_id, question_text, question_type, is_required)
+                     values ($1, $2, $3, $4) returning question_id`,
                     [Number(id), q.text, q.type, q.required ? 1 : 0]
                 );
                 const questionId = qResult.rows[0].question_id;
                 if (q.type === "mcq") {
                     for (const opt of q.options) {
                         await client.query(
-                            `INSERT INTO options (question_id, option_text) VALUES ($1, $2)`,
+                            `insert into options (question_id, option_text) values ($1, $2)`,
                             [questionId, opt]
                         );
                     }
@@ -539,12 +569,12 @@ router.delete("/:id", async (req, res) => {
     const { user_id } = req.query;
     try {
         const ownerRes = await pool.query(
-            `SELECT creator_id FROM forms WHERE form_id = $1`,
+            `select creator_id from forms where form_id = $1`,
             [Number(id)]
         );
         if (ownerRes.rows.length === 0) return res.status(404).json({ message: "Form not found" });
         if (ownerRes.rows[0].creator_id !== Number(user_id)) return res.status(403).json({ message: "Unauthorized" });
-        await pool.query(`DELETE FROM forms WHERE form_id = $1`, [Number(id)]);
+        await pool.query(`delete from forms where form_id = $1`, [Number(id)]);
         res.json({ message: "Form deleted successfully" });
     } catch (err) {
         console.error(err);
@@ -561,7 +591,7 @@ router.get("/dept-forms", async (req, res) => {
 
     try {
         const userRes = await pool.query(
-            `SELECT role, institution_id, dept_id FROM users WHERE user_id = $1`,
+            `select role, institution_id, dept_id from users where user_id = $1`,
             [userId]
         );
         if (userRes.rows.length === 0) return res.status(404).json({ message: "User not found" });
@@ -575,56 +605,26 @@ router.get("/dept-forms", async (req, res) => {
         await autoCloseExpiredForms(institution_id);
 
         const result = await pool.query(
-            `SELECT f.form_id, f.title, f.description, f.form_code,
+            `select f.form_id, f.title, f.description, f.form_code,
                     f.status, f.deadline, f.created_at, f.access_type,
                     f.target_dept_id, f.target_role, f.target_batch,
-                    d.name AS target_dept_name,
-                    u.name AS creator_name, u.role AS creator_role,
-                    COUNT(r.response_id) AS response_count
-             FROM forms f
-             JOIN users u ON f.creator_id = u.user_id
-             LEFT JOIN departments d ON f.target_dept_id = d.dept_id
-             LEFT JOIN responses r ON f.form_id = r.form_id
-             WHERE f.institution_id = $1
-               AND u.dept_id = $2
-             GROUP BY f.form_id, u.name, u.role, d.name
-             ORDER BY f.created_at DESC`,
+                    d.name as target_dept_name,
+                    u.name as creator_name, u.role as creator_role,
+                    count(r.response_id) as response_count
+             from forms f
+             join users u on f.creator_id = u.user_id
+             left join departments d on f.target_dept_id = d.dept_id
+             left join responses r on f.form_id = r.form_id
+             where f.institution_id = $1
+               and u.dept_id = $2
+             group by f.form_id, u.name, u.role, d.name
+             order by f.created_at desc`,
             [institution_id, dept_id]
         );
         res.json(result.rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to fetch dept forms" });
-    }
-});
-
-// ── Admin Delete Any Form ─────────────────────────────────────────────────────
-// DELETE /forms/admin/:id?institution_id=1
-// Admin can delete any form in their institution
-router.delete("/admin/:id", async (req, res) => {
-    const formId        = Number(req.params.id);
-    const institutionId = Number(req.query.institution_id);
-
-    if (isNaN(formId) || isNaN(institutionId)) {
-        return res.status(400).json({ message: "Invalid parameters" });
-    }
-
-    try {
-        const result = await pool.query(
-            `DELETE FROM forms
-             WHERE form_id = $1 AND institution_id = $2
-             RETURNING title`,
-            [formId, institutionId]
-        );
-
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: "Form not found" });
-        }
-
-        res.json({ ok: true, message: `Form "${result.rows[0].title}" deleted.` });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Failed to delete form" });
     }
 });
 

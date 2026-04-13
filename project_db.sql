@@ -12,6 +12,9 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
 DROP TABLE IF EXISTS institutions CASCADE;
 
+DROP TRIGGER IF EXISTS trg_audit_member_added ON users;
+DROP FUNCTION IF EXISTS fn_audit_member_added();
+
 -- =========================
 -- INSTITUTIONS
 -- =========================
